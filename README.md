@@ -1,2 +1,20 @@
-# Core
-A light-weight alternative to ASP.NET Core MVC 5, using simple HTML files &amp; scaffolding variables &amp; blocks.
+# Datasilk Core 
+#### An MVC Framework for ASP.NET Core
+A ultra-fast, light-weight alternative to ASP.NET Core MVC 5 that supports HTML scaffolding and simple web services.
+
+Instead of managing a complex ASP.NET Core web application and all of its configuration, simply include this framework within your own ASP.NET Core Web Application project, follow the installation instructions below, and start building your website!
+
+## Installation
+
+1. Include this project within your ASP.NET Core Web Application under a folder named `/Core`
+    * Either download the zip file from GitHub...
+    * Or use `git submodule add http://github.com/Datasilk/Core`
+
+2. copy `/Core/config.json` into the root of your ASP.NET Core web application
+	* edit `/config.json`, updating the database connection string for your database connection.
+
+3. copy `/Core/layout.html` into the root of your ASP.NET Core web application. You can make edits to this file if you need to add custom HTML within the `<head></head>` tag or the foot of your website layout.
+
+4. Open your `/Startup.cs` class file, remove all functions from the class, and make the class inherit `Datasilk.Startup`
+
+That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
