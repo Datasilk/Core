@@ -11,7 +11,7 @@ namespace Datasilk
 {
     public class Startup
     {
-        private Server server;
+        protected Server server;
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
@@ -70,14 +70,20 @@ namespace Datasilk
 
             //configure server security
             server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
-            
-            server.Up();
+
+            //server if finished configuring
+            Configured(app, env);
 
             //run Datasilk application
             app.Run(async (context) =>
             {
                 Run(context);
             });
+        }
+
+        public virtual void Configured(IApplicationBuilder app, IHostingEnvironment env)
+        {
+
         }
 
         public virtual async void Run(HttpContext context)

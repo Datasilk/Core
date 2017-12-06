@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 
 public class Service: Datasilk.Request
 {
-    protected Core S;
     public Dictionary<string, string> Form = new Dictionary<string, string>();
     public IFormFileCollection Files;
 

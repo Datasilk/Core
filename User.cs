@@ -9,9 +9,7 @@ namespace Datasilk
 
         [JsonIgnore]
         public Core S;
-        [JsonIgnore]
-        private string salt = "";
-        
+
         public int userId = 0;
         public short userType = 0;
         public string visitorId = "";

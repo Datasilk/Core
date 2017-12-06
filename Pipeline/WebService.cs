@@ -73,7 +73,7 @@ namespace Pipeline
             S = new Core(server, context);
 
             //load service class from URL path
-            string className = "Services." + paths[1];
+            string className = S.Server.nameSpace + ".Services." + paths[1];
             string methodName = paths[2];
             if(paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
             var service = GetService(className);

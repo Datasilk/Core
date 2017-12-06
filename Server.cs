@@ -41,12 +41,6 @@ public class Server
     //         where data is injected in between each array item.
     public Dictionary<string, structScaffold> Scaffold = new Dictionary<string, structScaffold>();
 
-
-    /// <summary>
-    /// Executed once the server is up & running
-    /// </summary>
-    public virtual void Up(){}
-
     #region "System.UI.Web.Page.Server methods"
     public string MapPath(string strPath = "") {
         if (_path == "") { _path = Path.GetFullPath(".") + "\\"; }
