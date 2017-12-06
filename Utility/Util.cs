@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Datasilk.Utility
+namespace Utility
 {
     public class Util
     {

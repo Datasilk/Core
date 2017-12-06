@@ -6,7 +6,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
-namespace Datasilk.Pipeline
+namespace Pipeline
 {
     public class WebService
     {
@@ -73,7 +73,7 @@ namespace Datasilk.Pipeline
             S = new Core(server, context);
 
             //load service class from URL path
-            string className = "Datasilk.Services." + paths[1];
+            string className = "Services." + paths[1];
             string methodName = paths[2];
             if(paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
             var service = GetService(className);

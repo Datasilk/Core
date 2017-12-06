@@ -17,6 +17,7 @@ namespace Datasilk
         public string visitorId = "";
         public string email = "";
         public string name = "";
+        public string displayName = "";
         public bool photo = false;
         public bool isBot = false;
         public bool useAjax = true;
@@ -41,7 +42,7 @@ namespace Datasilk
         { 
         }
 
-        public void LogIn(int userId, string email, string name, short userType, bool photo, DateTime datecreated)
+        public void LogIn(int userId, string email, string name, DateTime datecreated, string displayname = "", short userType = 1, bool photo = false)
         {
             Load();
             this.userId = userId;
@@ -49,6 +50,7 @@ namespace Datasilk
             this.email = email;
             this.photo = photo;
             this.name = name;
+            this.displayName = displayname;
             this.datecreated = datecreated;
             saveSession = true;
         }

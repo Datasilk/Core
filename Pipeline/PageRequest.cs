@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Http;
 
-namespace Datasilk.Pipeline
+namespace Pipeline
 {
     public class PageRequest
     {
@@ -17,7 +17,7 @@ namespace Datasilk.Pipeline
             var path = context.Request.Path.ToString().Substring(1).Split('?', 2)[0].Split('/');
 
             //create instance of Page class
-            Type type = Type.GetType(("Datasilk.Pages." + (path[0] == "" ? "Home" : S.Util.Str.Capitalize(path[0].Replace("-", " ")).Replace(" ", ""))));
+            Type type = Type.GetType((S.Server.nameSpace + ".Pages." + (path[0] == "" ? "Home" : S.Util.Str.Capitalize(path[0].Replace("-", " ")).Replace(" ", ""))));
             var page = (Page)Activator.CreateInstance(type, new object[] { S });
 
             //render the server response

@@ -51,6 +51,7 @@ namespace Datasilk
 
             server.config = config;
 
+            server.nameSpace = config.GetSection("Namespace").Value;
             server.sqlActive = config.GetSection("Data:Active").Value;
             server.sqlConnectionString = config.GetSection("Data:" + server.sqlActive).Value;
             

@@ -1,60 +1,40 @@
-﻿using System;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 
-namespace Datasilk
+public class Core
 {
-    public class Core
+    public Server Server;
+    public Utility.Util Util;
+    public Datasilk.User User;
+    public HttpContext Context;
+    public HttpRequest Request;
+    public HttpResponse Response;
+    public ISession Session;
+
+    public Core(Server server, HttpContext context)
     {
-        public Server Server;
-        public Utility.Util Util;
-        public User User;
-        public HttpContext Context;
-        public HttpRequest Request;
-        public HttpResponse Response;
-        public ISession Session;
-        private string _connString = "";
+        Server = server;
+        Util = server.Util;
+        Context = context;
+        Request = context.Request;
+        Response = context.Response;
+        Session = context.Session;
+        User = new Datasilk.User();
 
-        public Core(Server server, HttpContext context)
+        //load user session
+        if (Session.Get("user") != null)
         {
-            Server = server;
-            Util = server.Util;
-            Context = context;
-            Request = context.Request;
-            Response = context.Response;
-            Session = context.Session;
-            User = new User();
-
-            //load user session
-            if (Session.Get("user") != null)
-            {
-                User = (User)Util.Serializer.ReadObject(Util.Str.GetString(Session.Get("user")), User.GetType());
-            }
-            User.Init(this);
+            User = (Datasilk.User)Util.Serializer.ReadObject(Util.Str.GetString(Session.Get("user")), User.GetType());
         }
-
-        public void Unload()
-        {
-            if (User.saveSession == true)
-            {
-                Session.Set("user", Util.Serializer.WriteObject(User));
-            }
-        }
-
-        public string SqlConnectionString{
-            get {
-                if(_connString == "")
-                {
-                    var config = new ConfigurationBuilder()
-                    .AddJsonFile(Server.MapPath("config.json"))
-                    .Build();
-
-                    var sqlActive = config.GetSection("Data:Active").Value;
-                    _connString = config.GetSection("Data:" + sqlActive).Value;
-                }
-                return _connString;
-            }
-        }
+        User.Init(this);
     }
 
+    public void Unload()
+    {
+        if (User.saveSession == true)
+        {
+            Session.Set("user", Util.Serializer.WriteObject(User));
+        }
+    }
 }
+

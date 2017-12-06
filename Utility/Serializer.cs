@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using System.Reflection;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Datasilk.Utility
+namespace Utility
 {
     public class Serializer
     {

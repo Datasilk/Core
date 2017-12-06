@@ -15,6 +15,8 @@ Instead of managing a complex ASP.NET Core web application and all of its config
 
 3. copy `/Core/layout.html` into the root of your ASP.NET Core web application. You can make edits to this file if you need to add custom HTML within the `<head></head>` tag or the foot of your website layout.
 
-4. Open your `/Startup.cs` class file, remove all functions from the class, and make the class inherit `Datasilk.Startup`
+4. Open your `/Startup.cs` class file and replace everything with `public class Startup: Datasilk.Startup{ }`
+
+5. Open your Project Properties, select the `Application` tab, and change `startup object` to use `Program` instead of `[Your-Project-Name].Program`
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.

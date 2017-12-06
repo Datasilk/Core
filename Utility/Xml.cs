@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Xml;
 
-namespace Datasilk.Utility
+namespace Utility
 {
     public class Xml
     {
