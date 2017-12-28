@@ -105,5 +105,5 @@ All `Datasilk.Service` methods should return a string, but can also return a `Da
 return Inject(".myclass", Datasilk.Service.injectType.replace, myHtml, myJavascript, myCss)
 ```
 
-## Optional: Datasilk Javascript Core Library
-Learn more about the optional Javascript library, [Datasilk/JsCore](https://github.com/Datasilk/JsCore), which contains the appropriate functionality used to make ajax calls and inject content onto the page from the results of a `Datasilk.Service.Response` JSON object.
+## Optional: Datasilk Core Javascript Library
+Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page from the results of a `Datasilk.Service.Response` JSON object.
