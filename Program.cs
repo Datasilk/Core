@@ -2,24 +2,25 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
-using System.Diagnostics;
 
-[DebuggerNonUserCode]
-public class Program
+namespace Datasilk
 {
-    public static void Main(string[] args)
+    public class Program
     {
-        var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddCommandLine(args)
-                .Build();
+        public static void Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddCommandLine(args)
+                    .Build();
 
-        var host = new WebHostBuilder()
-                .UseIISIntegration()
-                .UseKestrel()
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseStartup<global::Startup>()
-                .Build();
-        host.Run();
+            var host = new WebHostBuilder()
+                    .UseIISIntegration()
+                    .UseKestrel()
+                    .UseContentRoot(Directory.GetCurrentDirectory())
+                    .UseStartup<global::Startup>()
+                    .Build();
+            host.Run();
+        }
     }
 }

@@ -26,8 +26,9 @@ public class Server
     public string sqlActive = "";
     public string sqlConnectionString = "";
     public Random Random = new Random();
-    public int bcrypt_workfactor = 10;
     public IConfiguration config;
+    public int bcrypt_workfactor = 10;
+    public string salt = "";
 
     private string _path = "";
 
