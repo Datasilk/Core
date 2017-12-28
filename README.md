@@ -11,7 +11,7 @@ Instead of managing a complex ASP.NET Core web application and all of its config
     * Or use `git submodule add http://github.com/Datasilk/Core`
 
 2. copy `/Core/config.json` into the root of your ASP.NET Core web application
-	* edit `/config.json` 
+	* edit the copied file `/config.json` 
       * update the `namespace` value to reflect your web application's namespace. This will ensure that page requests work by loading the correct `Page` classes from your project namespace.
       * update the `data/SqlServerTrusted` value to connect to your SQL Server database.
 
@@ -28,6 +28,9 @@ public class Startup: Datasilk.Startup {}
 6. Open your Project Properties, select the `Application` tab, and change `startup object` to use `Datasilk.Program`
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
+
+
+![Datasilk Core Diagram](https://www.markentingh.com/projects/datasilk-core/Datasilk+Core.jpg)
 
 ## Page Requests
 
@@ -74,7 +77,7 @@ If your web page is secure and must display an `Access Denied` page, you can ren
 > NOTE: You can find more functionality for the `Page` class inside `/Core/Request/Page.cs`.
 
 ## Web Services
-The Datasilk Core framework comes with the ability to call `RESTful` web APIs. All web API calls are executed from `Service` classes located in the `Services` namespace within your project (e.g. `MyProject.Services`) and will inherit the `Datasilk.Service` class.
+The Datasilk Core framework comes with the ability to call `RESTful` web APIs via AJAX. All web API calls are executed from `Service` classes located in the `Services` namespace within your project (e.g. `MyProject.Services`) and will inherit the `Datasilk.Service` class.
 
 #### Example
 
