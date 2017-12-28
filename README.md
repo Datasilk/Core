@@ -27,8 +27,10 @@ public class Startup: Datasilk.Startup {}
 
 6. Open your Project Properties, select the `Application` tab, and change `startup object` to use `Datasilk.Program`
 
-That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
+## That's it! 
+Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
 
+# 
 
 ![Datasilk Core Diagram](https://www.markentingh.com/projects/datasilk-core/Datasilk+Core.jpg)
 
