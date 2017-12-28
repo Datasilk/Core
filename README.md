@@ -19,9 +19,13 @@ Instead of managing a complex ASP.NET Core web application and all of its config
 
 4. copy `/Core/access-denied.html` into the root of your ASP.NET Core web application.
 
-4. Open your `/Startup.cs` class file and replace everything (including the namespace) with: `public class Startup: Datasilk.Startup{ }`
+4. Open your `/Startup.cs` class file and replace everything (including the namespace) with: 
 
-5. Open your Project Properties, select the `Application` tab, and change `startup object` to use `Datasilk.Program`
+```
+public class Startup: Datasilk.Startup {}
+```
+
+6. Open your Project Properties, select the `Application` tab, and change `startup object` to use `Datasilk.Program`
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
 
