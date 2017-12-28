@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Http;
 
-namespace Pipeline
+namespace Datasilk
 {
     public class PageRequest
     {

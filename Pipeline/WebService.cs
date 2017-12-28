@@ -6,7 +6,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
-namespace Pipeline
+namespace Datasilk
 {
     public class WebService
     {

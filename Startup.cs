@@ -135,7 +135,7 @@ namespace Datasilk
                     if (cleanNamespace(paths))
                     {
                         //execute web service
-                        var ws = new Pipeline.WebService(server, context, paths, form);
+                        var ws = new WebService(server, context, paths, form);
                         requestType = "service";
                     }
                 }
@@ -144,7 +144,7 @@ namespace Datasilk
             if (requestType == "" && extension == "")
             {
                 //initial page request
-                var r = new Pipeline.PageRequest(server, context, path);
+                var r = new PageRequest(server, context, path);
                 requestType = "page";
             }
 
