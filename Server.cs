@@ -29,6 +29,8 @@ public class Server
     public IConfiguration config;
     public int bcrypt_workfactor = 10;
     public string salt = "";
+    public bool hasAdmin = false; //if set to true, admin exists
+    public bool resetPass = false; //if set to true, require admin password to be reset 
 
     private string _path = "";
 

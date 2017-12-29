@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Datasilk
@@ -21,7 +22,9 @@ namespace Datasilk
         public bool useAjax = true;
         public bool isMobile = false;
         public bool isTablet = false;
+        public bool resetPass = false;
         public DateTime datecreated;
+        public Dictionary<string, string> Data = new Dictionary<string, string>();
 
         [JsonIgnore]
         public bool saveSession = false;
