@@ -49,13 +49,13 @@ namespace MyProject.Pages
 }
 ```
 
-In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Pages.Home` class. This class loads `/Pages/Home/home.html` into a `Scaffold` object and replaces the `{{title}}` variable located within the `home.html` file with the text "Welcome!". Then, the page returns `base.Render`, which will render HTML from `/layout.html` along with the contents of `scaffold.Render()` within the body of `layout.html`. 
+In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Pages.Home` class. This class loads `/Pages/Home/home.html` into a `Scaffold` object and replaces the `{{title}}` variable located within the `home.html` file with the text "Welcome!". Then, the page returns `base.Render`, which will render HTML from `/layout.html` along with the contents of `scaffold.Render()`, injected into the `<body>` tag of `/layout.html`. 
+
+> NOTE: `MyProject.Pages.Home` is the default class that is instantiated if the URL contains a domain name with no folder structure.
 
 ### Global `S` Object
 
 The `S` object (or "Super" object) is a global object that gives developers access to the `HttpContext` object via `S.Context`, the Web Server class  via `S.Server` (along with server-wide caching functionality), a persistant user object that is unique to each user session via `S.User`, and other `HttpContext` pointer objects via `S.Request`, `S.Response`, `S.Session`.
-
-> NOTE: `Home` is the default class that is instantiated if the URL contains a domain name with no folder structure.
  
 ### Layout.html
 `/layout.html` contains the `<html></html>`, `<head></head>` & `<body></body>` tags for the page, along with `<meta></meta>` tags, `<link/>` tags for CSS, and `<script></script>` tags or Javascript files.
