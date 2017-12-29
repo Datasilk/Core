@@ -21,6 +21,7 @@ namespace Datasilk
         public bool useAjax = true;
         public bool isMobile = false;
         public bool isTablet = false;
+        public bool resetPass = false;
         public DateTime datecreated;
 
         [JsonIgnore]
