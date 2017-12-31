@@ -1,3 +1,5 @@
+![Datasilk Logo](http://www.markentingh.com/projects/datasilk/logo.png)
+
 # Datasilk Core 
 #### An MVC Framework for ASP.NET Core
 A ultra-fast, light-weight alternative to ASP.NET Core MVC 5 that supports HTML scaffolding and simple web services.
