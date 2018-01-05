@@ -42,7 +42,7 @@ public class Server
     //Value for key/value pair is an array of HTML (scaffold["key"][x].htm), 
     //         separated by scaffold variable name (scaffold["key"][x].name),
     //         where data is injected in between each array item.
-    public Dictionary<string, structScaffold> Scaffold = new Dictionary<string, structScaffold>();
+    public Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
 
     #region "System.UI.Web.Page.Server methods"
     public string MapPath(string strPath = "") {

@@ -111,6 +111,9 @@ namespace Datasilk
             {
                 Console.WriteLine("--------------------------------------------");
                 Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
+
+                //optionally, wipe Scaffold cache to enable developer updates to html files when server is running
+                server.Scaffold = new System.Collections.Generic.Dictionary<string, SerializedScaffold>();
             }
 
             if (paths.Length > 1)
@@ -153,7 +156,7 @@ namespace Datasilk
                 requestEnd = DateTime.Now;
                 tspan = requestEnd - requestStart;
                 server.requestTime += (tspan.Seconds);
-                Console.WriteLine("END GET {0} {1} ms {2}", path, tspan.Milliseconds, requestType);
+                Console.WriteLine("END REQUEST {0} ms, {1} {2}", tspan.Milliseconds, path, requestType);
                 Console.WriteLine("");
             }
         }

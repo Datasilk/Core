@@ -41,7 +41,7 @@ namespace MyProject.Pages
         public override string Render(string[] path, string body = "", object metadata = null)
 		{
 			//render page
-			var scaffold = new Scaffold(S, "/Pages/Home/home.html");
+			var scaffold = new Scaffold(S.Server.MapPath("/Pages/Home/home.html");
 			scaffold.Data["title"] = "Welcome!";
 			return base.Render(path, scaffold.Render(), metadata);		
 		}
