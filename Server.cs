@@ -16,7 +16,7 @@ public class Server
         production = 2
     }
 
-    public string Version = "0.3";
+    public string Version = "0.7";
     public Utility.Util Util = new Utility.Util();
     public enumEnvironment environment = enumEnvironment.development;
     public DateTime serverStart = DateTime.Now;
