@@ -34,8 +34,20 @@ That's it! Next, learn how to use the Datasilk Core MVC framework to build web p
 
 All page requests are executed from `Page` classes located in the `Pages` namespace for your project (e.g. `MyProject.Pages`) and will inherit the `Datasilk.Page` class.
 
-#### Example
-
+### Example
+```
+<html>
+	<head>
+		<title>{{title}}</title>
+		<description>{{description}}</description>
+	</head>
+	<body>
+		{{content}}
+	</body>
+</html>
+```
+**home.html**
+---
 ```
 namespace MyProject.Pages
 {
@@ -47,30 +59,37 @@ namespace MyProject.Pages
 		{
 			//render page
 			var scaffold = new Scaffold(S.Server.MapPath("/Pages/Home/home.html");
-			scaffold.Data["title"] = "Welcome!";
+			scaffold.Data["title"] = "Welcome";
+			scaffold.Data["description"] = "I like to write software";
+			scaffold.Data["content"] = "<h1>Hello World!</h1>";
 			return base.Render(path, scaffold.Render(), metadata);		
 		}
 	}
 }
 ```
+**/Pages/Home/Home.cs**
+---
 
 In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Pages.Home` class. This class loads `/Pages/Home/home.html` into a `Scaffold` object and replaces the `{{title}}` variable located within the `home.html` file with the text "Welcome!". Then, the page returns `base.Render`, which will render HTML from `/layout.html` along with the contents of `scaffold.Render()`, injected into the `<body>` tag of `/layout.html`. 
 
 > NOTE: `MyProject.Pages.Home` is the default class that is instantiated if the URL contains a domain name with no folder structure. 
+
+### Datasilk.Page
+Inherited in classes that are used to render page requests.
 
 ### Global `S` Object
 
 The `S` object (or "Super" object) is a global object that gives developers access to the `HttpContext` object via `S.Context`, the Web Server class  via `S.Server` (along with server-wide caching functionality), a persistant user object that is unique to each user session via `S.User`, and other `HttpContext` pointer objects via `S.Request`, `S.Response`, `S.Session`.
  
 ### Layout.html
-`/layout.html` contains the `<html></html>`, `<head></head>` & `<body></body>` tags for the page, along with `<meta></meta>` tags, `<link/>` tags for CSS, and `<script></script>` tags or Javascript files.
+`/layout.html` contains the `<html>`, `<head>` & `<body>` tags for the page, along with `<meta>` tags, `<link/>` tags for CSS, and `<script>` tags or Javascript files.
 
 ### Access Denied
-If your web page is secure and must display an `Access Denied` page, you can render: 
+If your web page is secure and must display an `Access Denied` page, you can use: 
 
 ```return AccessDenied(true, Login(S))```
 
- from within your `Render` function, which will return the contents of the file `/access-denied.html`. If a `Login` class is supplied, instead of loading `/access-denied.html`, it will render an instance of your `Login` `Datasilk.Page` class.
+ from within your `Datasilk.Page` class `Render` method, which will return the contents of the file `/access-denied.html`. If a `Datasilk.Page` class is supplied (e.g. `Login(S)`), instead of loading `/access-denied.html`, it will render an instance of your `Datasilk.Page` class.
 
 > NOTE: You can find more functionality for the `Page` class inside `/Core/Request/Page.cs`.
 
