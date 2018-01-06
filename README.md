@@ -47,7 +47,9 @@ All page requests are executed from `Page` classes located in the `Pages` namesp
 </html>
 ```
 **home.html**
----
+
+# 
+
 ```
 namespace MyProject.Pages
 {
@@ -68,7 +70,8 @@ namespace MyProject.Pages
 }
 ```
 **/Pages/Home/Home.cs**
----
+
+# 
 
 In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Pages.Home` class. This class loads `/Pages/Home/home.html` into a `Scaffold` object and replaces the `{{title}}` variable located within the `home.html` file with the text "Welcome!". Then, the page returns `base.Render`, which will render HTML from `/layout.html` along with the contents of `scaffold.Render()`, injected into the `<body>` tag of `/layout.html`. 
 
