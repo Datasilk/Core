@@ -114,8 +114,19 @@ namespace Datasilk
                         break;
                     }
                 }
+
+                if (param == "")
+                {
+                    //set default value for empty parameter
+                    var t = methodParams[x].ParameterType;
+                    if (t == typeof(Int32))
+                    {
+                        param = "0";
+                    }
+                }
+
                 //cast params to correct (supported) types
-                if(methodParams[x].ParameterType.Name != "String")
+                if (methodParams[x].ParameterType.Name != "String")
                 {
                     var i = 0;
                     if (int.TryParse(param, out i) == true)

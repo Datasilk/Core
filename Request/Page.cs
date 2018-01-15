@@ -18,7 +18,7 @@
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {
             //renders HTML layout
-            var scaffold = new Scaffold(S.Server.MapPath("/layout.html"), S.Server.Scaffold);
+            var scaffold = new Scaffold("/layout.html", S.Server.Scaffold);
             scaffold.Data["title"] = title;
             scaffold.Data["description"] = description;
             scaffold.Data["head-css"] = headCss;
@@ -40,7 +40,7 @@
                 {
                     return login.Render(new string[] { });
                 }
-                var scaffold = new Scaffold(S.Server.MapPath("/access-denied.html"), S.Server.Scaffold);
+                var scaffold = new Scaffold("/access-denied.html", S.Server.Scaffold);
                 return scaffold.Render();
             }
             return "Access Denied";
