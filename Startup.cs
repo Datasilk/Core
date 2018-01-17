@@ -70,9 +70,10 @@ namespace Datasilk
 
             //configure server security
             server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
+            server.salt = config.GetSection("Encryption:salt").Value;
 
             //server if finished configuring
-            Configured(app, env);
+            Configured(app, env, config);
 
             //run Datasilk application
             app.Run(async (context) =>
@@ -81,10 +82,7 @@ namespace Datasilk
             });
         }
 
-        public virtual void Configured(IApplicationBuilder app, IHostingEnvironment env)
-        {
-
-        }
+        public virtual void Configured(IApplicationBuilder app, IHostingEnvironment env, IConfigurationRoot config){}
 
         public virtual async void Run(HttpContext context)
         {
@@ -93,7 +91,7 @@ namespace Datasilk
             TimeSpan tspan;
             var requestType = "";
             var path = cleanPath(context.Request.Path.ToString());
-            var paths = path.Split('/').Skip(1).ToArray();
+            var paths = path.Split('/').ToArray();
             var extension = "";
 
             //get request file extension (if exists)
@@ -112,7 +110,7 @@ namespace Datasilk
             if (server.environment == Server.enumEnvironment.development)
             {
                 Console.WriteLine("--------------------------------------------");
-                Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), context.Request.Path);
+                Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
             }
 
             if (paths.Length > 1)
@@ -146,7 +144,7 @@ namespace Datasilk
             if (requestType == "" && extension == "")
             {
                 //initial page request
-                var r = new Pipeline.PageRequest(server, context);
+                var r = new Pipeline.PageRequest(server, context, path);
                 requestType = "page";
             }
 
@@ -155,7 +153,7 @@ namespace Datasilk
                 requestEnd = DateTime.Now;
                 tspan = requestEnd - requestStart;
                 server.requestTime += (tspan.Seconds);
-                Console.WriteLine("END GET {0} {1} ms {2}", context.Request.Path, tspan.Milliseconds, requestType);
+                Console.WriteLine("END GET {0} {1} ms {2}", path, tspan.Milliseconds, requestType);
                 Console.WriteLine("");
             }
         }
@@ -164,7 +162,7 @@ namespace Datasilk
         {
             //check for malicious path input
             if(path == "") { return path; }
-
+            if(path[0] == '/') { path = path.Substring(1); }
             if (path.Replace("/", "").Replace("-","").Replace("+","").All(char.IsLetterOrDigit)) {
                 //path is clean
                 return path;
