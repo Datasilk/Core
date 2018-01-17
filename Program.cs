@@ -18,7 +18,7 @@ namespace Datasilk
                     .UseIISIntegration()
                     .UseKestrel()
                     .UseContentRoot(Directory.GetCurrentDirectory())
-                    .UseStartup<Startup>()
+                    .UseStartup<global::Startup>()
                     .Build();
             host.Run();
         }

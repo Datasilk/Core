@@ -16,7 +16,7 @@ public class Server
         production = 2
     }
 
-    public string Version = "0.3";
+    public string Version = "0.7.8";
     public Utility.Util Util = new Utility.Util();
     public enumEnvironment environment = enumEnvironment.development;
     public DateTime serverStart = DateTime.Now;
@@ -29,6 +29,8 @@ public class Server
     public IConfiguration config;
     public int bcrypt_workfactor = 10;
     public string salt = "";
+    public bool hasAdmin = false; //if set to true, admin exists
+    public bool resetPass = false; //if set to true, require admin password to be reset 
 
     private string _path = "";
 
@@ -40,7 +42,7 @@ public class Server
     //Value for key/value pair is an array of HTML (scaffold["key"][x].htm), 
     //         separated by scaffold variable name (scaffold["key"][x].name),
     //         where data is injected in between each array item.
-    public Dictionary<string, structScaffold> Scaffold = new Dictionary<string, structScaffold>();
+    public Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
 
     #region "System.UI.Web.Page.Server methods"
     public string MapPath(string strPath = "") {

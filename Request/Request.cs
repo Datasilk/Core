@@ -21,7 +21,14 @@
 
         public string Error()
         {
-            return "error";
+            S.Response.StatusCode = 500;
+            return S.Server.LoadFileFromCache("/Pages/500.html"); ;
+        }
+
+        public string Error404()
+        {
+            S.Response.StatusCode = 404;
+            return S.Server.LoadFileFromCache("/Pages/404.html"); ;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Datasilk
@@ -21,9 +22,9 @@ namespace Datasilk
         public bool useAjax = true;
         public bool isMobile = false;
         public bool isTablet = false;
+        public bool resetPass = false;
         public DateTime datecreated;
-        public int lastSubjectId = 0;
-        public string lastSubjectName = "";
+        public Dictionary<string, string> Data = new Dictionary<string, string>();
 
         [JsonIgnore]
         public bool saveSession = false;
@@ -40,7 +41,7 @@ namespace Datasilk
         { 
         }
 
-        public void LogIn(int userId, string email, string name, DateTime datecreated, string displayname = "", short userType = 1, bool photo = false)
+        public void LogIn(int userId, string email, string name, DateTime datecreated, string displayName = "", short userType = 1, bool photo = false)
         {
             Load();
             this.userId = userId;
@@ -48,7 +49,7 @@ namespace Datasilk
             this.email = email;
             this.photo = photo;
             this.name = name;
-            this.displayName = displayname;
+            this.displayName = displayName;
             this.datecreated = datecreated;
             saveSession = true;
         }
