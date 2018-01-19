@@ -143,6 +143,21 @@ namespace Datasilk
                         }
 
                     }
+                    else if (methodParams[x].ParameterType.FullName.Contains("DateTime"))
+                    {
+                        if(param == "")
+                        {
+                            paramVals[x] = null;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                paramVals[x] = DateTime.Parse(param);
+                            }
+                            catch (Exception) { }
+                        }
+                    }
                     else
                     {
                         paramVals[x] = Convert.ChangeType(param, methodParams[x].ParameterType);
