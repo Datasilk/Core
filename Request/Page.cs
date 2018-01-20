@@ -6,13 +6,12 @@
         public string description = "";
         public string headCss = "";
         public string favicon = "/images/favicon.png";
-        public string svgIcons = "";
         public string scripts = "";
         public bool useTapestry = true;
 
         public Page(Core DatasilkCore): base (DatasilkCore)
         {
-            svgIcons = DatasilkCore.Server.LoadFileFromCache("/content/themes/default/icons.svg");
+            //svgIcons = DatasilkCore.Server.LoadFileFromCache("/content/themes/default/icons.svg");
         }
 
         public virtual string Render(string[] path, string body = "", object metadata = null)
@@ -23,7 +22,6 @@
             scaffold.Data["description"] = description;
             scaffold.Data["head-css"] = headCss;
             scaffold.Data["favicon"] = favicon;
-            scaffold.Data["svg-icons"] = svgIcons;
             scaffold.Data["body"] = body;
 
             //add initialization script

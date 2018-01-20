@@ -37,7 +37,13 @@ namespace Datasilk
             app.UseSession();
 
             //handle static files
-            var options = new StaticFileOptions {ContentTypeProvider = new FileExtensionContentTypeProvider()};
+            var provider = new FileExtensionContentTypeProvider();
+            // Add new mappings
+            provider.Mappings[".svg"] = "image/svg";
+            var options = new StaticFileOptions
+            {
+                ContentTypeProvider = provider
+            };
             app.UseStaticFiles(options);
 
             //exception handling
