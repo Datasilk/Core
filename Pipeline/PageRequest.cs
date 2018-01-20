@@ -23,6 +23,8 @@ namespace Datasilk
             //render the server response
             S.Response.ContentType = "text/html";
             S.Response.WriteAsync(page.Render(paths));
+            
+            S.Unload();
         }
     }
 }
