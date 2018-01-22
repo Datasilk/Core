@@ -78,6 +78,14 @@ namespace Datasilk
             if(paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
             var service = GetService(className);
 
+            //check if service class was found
+            if(service == null)
+            {
+                context.Response.WriteAsync("no service found");
+                S.Unload();
+                return;
+            }
+
             if (dataType == 1)
             {
                 //parse HTML form POST data and send to new Service instance
@@ -198,13 +206,25 @@ namespace Datasilk
         private Service GetService(string className)
         {
             //hard-code all known services to increase server performance
-            switch(className.ToLower()){
-
-                default:
-                    //last resort, find service class manually
+            var routes = new global::Routes(S);
+            var service = routes.FromServiceRoutes(className);
+            if(service != null)
+            {
+                return service;
+            }
+            else
+            {
+                try
+                {
                     Type type = Type.GetType(className);
                     return (Service)Activator.CreateInstance(type, new object[] { S });
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
             }
+
         }
     }
 }

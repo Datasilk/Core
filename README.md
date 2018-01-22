@@ -12,27 +12,39 @@ Instead of managing a complex ASP.NET Core web application and all of its config
     * Either download the zip file from GitHub...
     * Or use `git submodule add http://github.com/Datasilk/Core`
 
-2. copy `/Core/config.json` into the root of your ASP.NET Core web application
+2. copy `/Core/config.json` into the root of your ASP.NET Core project
 	* edit `/config.json` 
-      * update the `namespace` value to reflect your web application's namespace. This will ensure that page requests work by loading the correct `Page` classes from your project namespace.
+      * update the `namespace` value to reflect your web application's namespace. This will allow Datasilk Core to access code from your project correctly
       * update the `data/SqlServerTrusted` value to connect to your SQL Server database.
 
-3. copy `/Core/layout.html` into the root of your ASP.NET Core web application. You can make edits to this file if you need to add custom HTML within the `<head>` tag or the foot of your website layout.
+3. copy `/Core/layout.html` into the root of your ASP.NET Core project. You can make edits to this file if you need to add custom HTML within the `<head>` tag or the foot of your website layout.
 
-4. copy `/Core/access-denied.html` into the root of your ASP.NET Core web application.
+4. copy `/Core/access-denied.html` into the root of your ASP.NET Core project.
 
 4. Open your `/Startup.cs` class file and replace everything with: 
 ```
 public class Startup: Datasilk.Startup{ }
 ```
 
-5. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
+5. Create a new class `/Routes.cs` in the root of your ASP.NET Core project and replace everything with:
+```
+using Datasilk;
+
+public class Routes: Datasilk.Routes
+{
+    public Routes(Core DatasilkCore) : base(DatasilkCore) {}
+}
+```
+
+6. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
 
 ## Page Requests
 
-All page requests are executed from `Page` classes located in the `Pages` namespace for your project (e.g. `MyProject.Pages`) and will inherit the `Datasilk.Page` class.
+All page request URLs are mapped to classes that inherit the `Datasilk.Page` class located in the `Pages` namespace for your project (e.g. `MyProject.Pages`). For example, the URL `http://localhost:7770/products` maps to the class `MyProject.Pages.Products`.
+
+> NOTE: Replace "MyProject" with the name of your project in the examples above & below
 
 ### Example
 ```
@@ -76,6 +88,13 @@ namespace MyProject.Pages
 In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Pages.Home` class. This class loads `/Pages/Home/home.html` into a `Scaffold` object and replaces the `{{title}}` variable located within the `home.html` file with the text "Welcome!". Then, the page returns `base.Render`, which will render HTML from `/layout.html` along with the contents of `scaffold.Render()`, injected into the `<body>` tag of `/layout.html`. 
 
 > NOTE: `MyProject.Pages.Home` is the default class that is instantiated if the URL contains a domain name with no folder structure. 
+
+### Page Hierarchy
+To render web pages based on complex URL paths, the Datasilk Core framework relies heavily on the first part of the request path to determine which class to instantiate. For example, if the user accesses the URL `http://localhost:7770/blog/2018/01/21/Progress-Report`, Datasilk Core initializes the `MyProject.Pages.Blog` class. 
+
+The request path is split up into an array and passed into the overridable `Render` function located in 
+
+To create a page hierarchy, use a switch statement and logic to render content based on the URL path structure.
 
 ### Datasilk.Page
 Inherited in classes that are used to render page requests.
@@ -129,8 +148,11 @@ In the example above, the user would send an `AJAX` `POST` via Javascript to the
 All `Datasilk.Service` methods should return a string, but can also return a `Datasilk.Service.Response` object, which will allow the user to specify where in the DOM to inject HTML, how it should be injected (replace, append, before, after), and whether or not to load some custom javascript code or CSS styles. For example:
 
 ```
-return Inject(".myclass", Datasilk.Service.injectType.replace, myHtml, myJavascript, myCss)
+return Inject(".myclass", injectType.replace, myHtml, myJavascript, myCss)
 ```
 
+## Routes.cs
+Your project now includes `Routes.cs`, an empty class file in the root folder. Use it by mapping request path names to new instances of `Datasilk.Page` classes. By routing new class instances using the `new` keyword, you bypass the last resort for Datasilk Core, which is to create an instance of your `Page` class using `Activator.CreateInstance`, taking 10 times the amount of CPU ticks to instatiate.
+
 ## Optional: Datasilk Core Javascript Library
-Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page from the results of a `Datasilk.Service.Response` JSON object.
+Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page from a `Datasilk.Service` method that returns an object of type `Datasilk.Service.Response`. The library includes other optional features, such as message alert boxes, popup modals, drag & drop functionality, and HTML templating.
