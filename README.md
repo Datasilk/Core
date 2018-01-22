@@ -28,8 +28,6 @@ public class Startup: Datasilk.Startup{ }
 
 5. Create a new class `/Routes.cs` in the root of your ASP.NET Core project and replace everything with:
 ```
-using Datasilk;
-
 public class Routes: Datasilk.Routes
 {
     public Routes(Core DatasilkCore) : base(DatasilkCore) {}
@@ -150,7 +148,34 @@ return Inject(".myclass", injectType.replace, myHtml, myJavascript, myCss)
 ```
 
 ## Routes.cs
-Your project now includes `Routes.cs`, an empty class file in the root folder. Use it by mapping request path names to new instances of `Datasilk.Page` classes. By routing new class instances using the `new` keyword, you bypass the last resort for Datasilk Core, which is to create an instance of your `Page` class using `Activator.CreateInstance`, taking 10 times the amount of CPU ticks to instatiate.
+Your project now includes `Routes.cs`, an empty class file in the root folder. Use it by mapping request path names to new instances of `Datasilk.Page` classes. For example:
+```
+public class Routes: Datasilk.Routes
+{
+    public Routes(Core DatasilkCore) : base(DatasilkCore) {}
+
+    public override Page FromPageRoutes(string name)
+    {
+        switch (name)
+        {
+            case "": case "home": return new MyProject.Pages.Home(S);
+            case "login": return new MyProject.Pages.Login(S);
+            case "dashboard": return new MyProject.Pages.Dashboard(S);
+        }
+        return null;
+
+    }
+
+    public override Service FromServiceRoutes(string name)
+    {
+        return null;
+    }
+}
+```
+
+#### Why Routing?
+By routing new class instances using the `new` keyword, you bypass the last resort for Datasilk Core, which is to create an instance of your `Page` class using `Activator.CreateInstance`, taking 10 times the amount of CPU ticks to instatiate. You don't have to use routing, but it does speed up performance.
+
 
 ## Optional: Datasilk Core Javascript Library
 Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page from a `Datasilk.Service` method that returns an object of type `Datasilk.Service.Response`. The library includes other optional features, such as message alert boxes, popup modals, drag & drop functionality, and HTML templating.
