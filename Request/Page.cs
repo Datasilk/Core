@@ -1,13 +1,19 @@
-﻿namespace Datasilk
+﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
+
+namespace Datasilk
 {
     public class Page: Request
     {
+
         public string title = "Datasilk";
         public string description = "";
         public string headCss = "";
         public string favicon = "/images/favicon.png";
         public string scripts = "";
         public bool useTapestry = true;
+        public Dictionary<string, string> Form = new Dictionary<string, string>();
+        public IFormFileCollection Files;
 
         public Page(Core DatasilkCore): base (DatasilkCore)
         {
@@ -57,6 +63,12 @@
         public void AddCSS(string url)
         {
             headCss += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + url + "\"></link>";
+        }
+
+        public void LoadPartial(ref Page page)
+        {
+            page.Files = Files;
+            page.Form = Form;
         }
     }
 }

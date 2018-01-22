@@ -16,7 +16,12 @@ namespace Datasilk
 
             var host = new WebHostBuilder()
                     .UseIISIntegration()
-                    .UseKestrel()
+                    .UseKestrel(
+                        options =>
+                        {
+                            options.Limits.MaxRequestBodySize = null;
+                        }
+                    )
                     .UseContentRoot(Directory.GetCurrentDirectory())
                     .UseStartup<global::Startup>()
                     .Build();
