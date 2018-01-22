@@ -92,9 +92,7 @@ In the example above, a user tries to access the URL `http://localhost:7770/`, w
 ### Page Hierarchy
 To render web pages based on complex URL paths, the Datasilk Core framework relies heavily on the first part of the request path to determine which class to instantiate. For example, if the user accesses the URL `http://localhost:7770/blog/2018/01/21/Progress-Report`, Datasilk Core initializes the `MyProject.Pages.Blog` class. 
 
-The request path is split up into an array and passed into the overridable `Render` function located in 
-
-To create a page hierarchy, use a switch statement and logic to render content based on the URL path structure.
+The request path is split up into an array and passed into the overridable `Render` function located in your `Datasilk.Page` class. The `paths` array is used to determine what type of content to load for the user. If we're loading a blog post like the above example, we can check the path to find year, month, and day, followed by the title of the blog post.
 
 ### Datasilk.Page
 Inherited in classes that are used to render page requests.
