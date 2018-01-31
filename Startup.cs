@@ -331,6 +331,20 @@ namespace Datasilk
                                         catch (Exception) { }
                                     }
                                 }
+                                else if(methodParams[x].ParameterType.IsArray)
+                                {
+                                    var arr = param.Replace("[", "").Replace("]", "").Replace("\r", "").Replace("\n", "").Split(",").Select(a => { return a.Trim(); }).ToList();
+                                    if (methodParams[x].ParameterType.FullName == "System.Int32[]")
+                                    {
+                                        paramVals[x] = arr.Select(a => { return int.Parse(a); }).ToArray();
+                                    }
+                                    else
+                                    {
+                                        paramVals[x] = Convert.ChangeType(arr, methodParams[x].ParameterType);
+                                    }
+                                    
+                                    
+                                }
                                 else
                                 {
                                     paramVals[x] = Convert.ChangeType(param, methodParams[x].ParameterType);
