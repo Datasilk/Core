@@ -147,6 +147,8 @@ All `Datasilk.Service` methods should return a string, but can also return a `Da
 return Inject(".myclass", injectType.replace, myHtml, myJavascript, myCss)
 ```
 
+> NOTE: You must first install the optional JavaScript library [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs) and use the JavaScript function `S.ajax` in order to correctly process the JSON response from a Web Service method that returns a `Datasilk.Service.Response` object
+
 ## Routes.cs
 Your project now includes `Routes.cs`, an empty class file in the root folder. Use it by mapping request path names to new instances of `Datasilk.Page` classes. For example:
 ```
@@ -163,7 +165,6 @@ public class Routes: Datasilk.Routes
             case "dashboard": return new MyProject.Pages.Dashboard(S);
         }
         return null;
-
     }
 
     public override Service FromServiceRoutes(string name)
@@ -178,4 +179,4 @@ By routing new class instances using the `new` keyword, you bypass the last reso
 
 
 ## Optional: Datasilk Core Javascript Library
-Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page from a `Datasilk.Service` method that returns an object of type `Datasilk.Service.Response`. The library includes other optional features, such as message alert boxes, popup modals, drag & drop functionality, and HTML templating.
+Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page. The library includes other optional features, such as message alert boxes, popup modals, drag & drop functionality, and HTML templating.
