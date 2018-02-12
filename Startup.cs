@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 
@@ -367,6 +366,10 @@ namespace Datasilk
                         }
                         catch (Exception ex)
                         {
+                            if (server.environment == Server.enumEnvironment.development)
+                            {
+                                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                            }
                             throw ex.InnerException;
                         }
 
@@ -415,7 +418,18 @@ namespace Datasilk
                     {
                         page.Files = form.Files;
                     }
-                    html = page.Render(newpaths);
+                    try
+                    {
+                        html = page.Render(newpaths);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (server.environment == Server.enumEnvironment.development)
+                        {
+                            Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        }
+                        throw ex.InnerException;
+                    }
                 }
                 else
                 {
@@ -430,7 +444,7 @@ namespace Datasilk
 
                 //send response back to client
                 S.Response.ContentType = "text/html";
-                S.Response.WriteAsync(html);
+                await S.Response.WriteAsync(html);
             }
 
             if (server.environment == Server.enumEnvironment.development)

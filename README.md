@@ -21,12 +21,12 @@ Instead of managing a complex ASP.NET Core web application and all of its config
 
 4. copy `/Core/access-denied.html` into the root of your ASP.NET Core project.
 
-4. Open your `/Startup.cs` class file and replace everything with: 
+5. Open your `/Startup.cs` class file and replace everything with: 
 ```
 public class Startup: Datasilk.Startup{ }
 ```
 
-5. Create a new class `/Routes.cs` in the root of your ASP.NET Core project and replace everything with:
+6. Create a new class `/Routes.cs` in the root of your ASP.NET Core project and replace everything with:
 ```
 public class Routes: Datasilk.Routes
 {
@@ -34,7 +34,9 @@ public class Routes: Datasilk.Routes
 }
 ```
 
-6. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
+7. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
+
+8. In Visual Studio, change the properties for all `.html` files to copy to Output Folder (if newer). This will ensure that these files are copied when publishing your web application to IIS
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
 
