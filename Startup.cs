@@ -18,10 +18,44 @@ namespace Datasilk
 {
     public class Startup
     {
-        protected Server server;
+        protected static Server server;
+        protected static IConfigurationRoot config;
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
+            //load application-wide cache
+            server = new Server();
+
+            config = new ConfigurationBuilder()
+                .AddJsonFile(server.MapPath("config.json"))
+                .AddEnvironmentVariables().Build();
+
+            server.config = config;
+
+            server.nameSpace = config.GetSection("Namespace").Value;
+            server.sqlActive = config.GetSection("Data:Active").Value;
+            server.sqlConnectionString = config.GetSection("Data:" + server.sqlActive).Value;
+
+            switch (config.GetSection("Environment").Value.ToLower())
+            {
+                case "development":
+                case "dev":
+                    server.environment = Server.enumEnvironment.development;
+                    break;
+                case "staging":
+                case "stage":
+                    server.environment = Server.enumEnvironment.staging;
+                    break;
+                case "production":
+                case "prod":
+                    server.environment = Server.enumEnvironment.production;
+                    break;
+            }
+
+            //configure server security
+            server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
+            server.salt = config.GetSection("Encryption:salt").Value;
+
             //set up server-side memory cache
             services.AddDistributedMemoryCache();
             services.AddMemoryCache();
@@ -35,20 +69,28 @@ namespace Datasilk
                 }
             );
 
+            //configure cookie-based authentication
+            var expires = !string.IsNullOrEmpty(config.GetSection("Session:Expires").Value) ? int.Parse(config.GetSection("Session:Expires").Value) : 60;
+
+            services.AddAuthentication().AddCookie(opts =>
+            {
+                opts.Cookie.Expiration = TimeSpan.FromMinutes(expires);
+                opts.Cookie.Name = server.nameSpace;
+            });
+
+
+            //configure session
             services.AddSession(opts =>
             {
-                //set up cookie expiration
-                opts.Cookie.Name = "Datasilk";
-                opts.IdleTimeout = TimeSpan.FromMinutes(60);
+                opts.Cookie.Name = server.nameSpace;
+                opts.IdleTimeout = TimeSpan.FromMinutes(expires);
             });
         }
 
         public virtual void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-
-            //load application-wide memory store
-            server = new Server();
-
+            //use cookie authentication
+            app.UseAuthentication();
             //use session
             app.UseSession();
 
@@ -67,33 +109,6 @@ namespace Datasilk
             var errOptions = new DeveloperExceptionPageOptions();
             errOptions.SourceCodeLineCount = 10;
             app.UseDeveloperExceptionPage();
-
-            var config = new ConfigurationBuilder()
-                .AddJsonFile(server.MapPath("config.json"))
-                .AddEnvironmentVariables().Build();
-
-            server.config = config;
-
-            server.nameSpace = config.GetSection("Namespace").Value;
-            server.sqlActive = config.GetSection("Data:Active").Value;
-            server.sqlConnectionString = config.GetSection("Data:" + server.sqlActive).Value;
-            
-            switch (config.GetSection("Environment").Value.ToLower())
-            {
-                case "development": case "dev":
-                    server.environment = Server.enumEnvironment.development;
-                    break;
-                case "staging": case "stage":
-                    server.environment = Server.enumEnvironment.staging;
-                    break;
-                case "production": case "prod":
-                    server.environment = Server.enumEnvironment.production;
-                    break;
-            }
-
-            //configure server security
-            server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
-            server.salt = config.GetSection("Encryption:salt").Value;
 
             //server if finished configuring
             Configured(app, env, config);

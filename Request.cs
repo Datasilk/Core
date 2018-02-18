@@ -1,4 +1,7 @@
-﻿namespace Datasilk
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+
+namespace Datasilk
 {
     public class Request
     {
@@ -16,6 +19,15 @@
             {
                 return true;
             }
+
+            //check cookie authentication
+            AuthenticationHttpContextExtensions.ChallengeAsync(S.Context,
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new AuthenticationProperties()
+                {
+                    RedirectUri="/access-denied"
+                }
+            );
             return false;
         }
 
