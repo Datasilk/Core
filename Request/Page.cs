@@ -15,11 +15,6 @@ namespace Datasilk
         public Dictionary<string, string> Form = new Dictionary<string, string>();
         public IFormFileCollection Files;
 
-        public Page(Core DatasilkCore): base (DatasilkCore)
-        {
-            //svgIcons = DatasilkCore.Server.LoadFileFromCache("/content/themes/default/icons.svg");
-        }
-
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {
             //renders HTML layout
@@ -55,14 +50,14 @@ namespace Datasilk
             return "<script language=\"javascript\">window.location.href = '" + url + "';</script>";
         }
 
-        public void AddScript(string url)
+        public void AddScript(string url, string id = "")
         {
-            scripts += "<script language=\"javascript\" src=\"" + url + "\"></script>";
+            scripts += "<script language=\"javascript\"" + (id != "" ? " id=\"" + id + "\"" : "") + " src=\"" + url + "\"></script>";
         }
 
-        public void AddCSS(string url)
+        public void AddCSS(string url, string id = "")
         {
-            headCss += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + url + "\"></link>";
+            headCss += "<link rel=\"stylesheet\" type=\"text/css\"" + (id != "" ? " id=\"" + id + "\"" : "") + " href=\"" + url + "\"></link>";
         }
 
         public void LoadPartial(ref Page page)

@@ -385,7 +385,7 @@ namespace Datasilk
                             {
                                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
                             }
-                            throw ex.InnerException;
+                            throw ex.Exception;
                         }
 
 
@@ -439,11 +439,8 @@ namespace Datasilk
                     }
                     catch (Exception ex)
                     {
-                        if (server.environment == Server.enumEnvironment.development)
-                        {
-                            Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
-                        }
-                        throw ex.InnerException;
+                        Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        throw ex;
                     }
                 }
                 else
