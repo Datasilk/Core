@@ -15,6 +15,8 @@ namespace Datasilk
         public Dictionary<string, string> Form = new Dictionary<string, string>();
         public IFormFileCollection Files;
 
+        public Page(Core DatasilkCore) : base(DatasilkCore){}
+
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {
             //renders HTML layout

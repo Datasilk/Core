@@ -385,7 +385,7 @@ namespace Datasilk
                             {
                                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
                             }
-                            throw ex.Exception;
+                            throw ex;
                         }
 
 

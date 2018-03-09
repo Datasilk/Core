@@ -31,6 +31,7 @@ public class Server
     public string salt = "";
     public bool hasAdmin = false; //if set to true, admin exists
     public bool resetPass = false; //if set to true, require admin password to be reset 
+    public Dictionary<string, string> languages;
 
     private string _path = "";
 
