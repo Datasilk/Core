@@ -359,6 +359,10 @@ namespace Datasilk
                                     
                                     
                                 }
+                                else if(methodParams[x].ParameterType.Name.IndexOf("Dictionary") == 0)
+                                {
+                                    paramVals[x] = (Dictionary<string, string>)S.Util.Serializer.ReadObject(param, typeof(Dictionary<string, string>));
+                                }
                                 else
                                 {
                                     paramVals[x] = Convert.ChangeType(param, methodParams[x].ParameterType);
