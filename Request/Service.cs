@@ -35,6 +35,12 @@ namespace Datasilk
             return "access denied";
         }
 
+        public string Error(string message)
+        {
+            S.Response.StatusCode = 500;
+            return message;
+        }
+
         public string Success()
         {
             return "success";
