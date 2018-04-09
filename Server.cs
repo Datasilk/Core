@@ -96,6 +96,19 @@ public class Server
         return "";
     }
 
+    public void SaveFileFromCache(string filename, string value)
+    {
+        File.WriteAllText(MapPath(filename), value);
+        if (Cache.ContainsKey(filename))
+        {
+            Cache[filename] = value;
+        }
+        else
+        {
+            Cache.Add(filename, value);
+        }
+    }
+
     public void SaveToCache(string key, object value)
     {
         if (Cache.ContainsKey(key))
