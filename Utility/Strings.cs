@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Utility
 {
@@ -372,76 +373,6 @@ namespace Utility
         #endregion
 
         #region "Extraction"
-        public string getFileExtension(string filename)
-        {
-            for (int x = filename.Length - 1; x >= 0; x += -1)
-            {
-                if (filename.Substring(x, 1) == ".")
-                {
-                    return filename.Substring(x + 1);
-                }
-            }
-
-            return "";
-        }
-
-        public string getFolder(string filename)
-        {
-            var paths = filename.Replace("/", "\\").Split('\\').ToList();
-            paths.RemoveAt(paths.Count - 1);
-            return string.Join("\\", paths.ToArray()) + "\\";
-        }
-
-        public string GetDomainName(string url)
-        {
-            string[] tmpDomain = GetSubDomainAndDomain(url).Split(new char[] { '.' }, 3);
-            if (tmpDomain.Length == 2)
-            {
-                return string.Join(".", tmpDomain);
-            }
-            else if (tmpDomain.Length == 3)
-            {
-                if (tmpDomain[1] == "co")
-                {
-                    return string.Join(".", tmpDomain); ;
-                }
-                return tmpDomain[1] + "." + tmpDomain[2];
-            }
-            return string.Join(".", tmpDomain);
-        }
-
-        public string GetSubDomainAndDomain(string url)
-        {
-            string strDomain = url.Replace("http://", "").Replace("https://", "").Replace("www.", "").Split('/')[0];
-            if (strDomain.IndexOf("localhost") >= 0 | strDomain.IndexOf("192.168") >= 0)
-            {
-                strDomain = "datasilk.io";
-            }
-            return strDomain.Replace("/", "");
-        }
-
-        public string[] GetDomainParts(string url)
-        {
-            string subdomain = GetSubDomainAndDomain(url);
-            string domain = GetDomainName(subdomain);
-            string sub = subdomain.Replace(domain, "").Replace(".", "");
-            if (sub != "")
-            {
-                return new string[] { sub, subdomain.Replace(sub, "") };
-            }
-            return new string[] { "", subdomain };
-        }
-
-        public string GetPageTitle(string title)
-        {
-            return title.Split(new string[] { " - " }, 0)[1];
-        }
-
-        public string GetWebsiteTitle(string title)
-        {
-            return title.Split(new string[] { " - " }, 0)[0];
-        }
-
         public double[] GetNumbersFromText(string text)
         {
             var isnum = false;
@@ -514,27 +445,17 @@ namespace Utility
             return result;
         }
 
-        public string DateFolders(DateTime myDate, int folderCount = 3)
+        public string CreateMD5(string text)
         {
-            string myMonth = myDate.Month.ToString();
-            if (myMonth.Length == 1)
-                myMonth = "0" + myMonth;
-            string myDay = myDate.Day.ToString();
-            if (myDay.Length == 1)
-                myDay = "0" + myDay;
-            if (folderCount == 3)
+            MD5 md5 = MD5.Create();
+            byte[] bytes = Encoding.ASCII.GetBytes(text);
+            byte[] hash = md5.ComputeHash(bytes);
+            StringBuilder str = new StringBuilder();
+            for (int i = 0; i < hash.Length; i++)
             {
-                return myDate.Year.ToString() + myMonth + "/" + myDay;
+                str.Append(hash[i].ToString("X2"));
             }
-            else if (folderCount == 1)
-            {
-                return myDate.Year.ToString() + myMonth;
-            }
-            else if (folderCount == 2)
-            {
-                return myDay;
-            }
-            return "";
+            return str.ToString();
         }
 
         public string NumberSuffix(int digit)
@@ -767,12 +688,112 @@ namespace Utility
 
             return false;
         }
+        #endregion
 
-        public string CleanInput(string input, bool noHtml = true, bool noJs = true, bool noEncoding = true, bool noSpecialChars = true, string[] allowedChars = null)
+        #region "Files & Folders"
+        public string GetFilename(string filepath)
         {
-            //cleans any malacious patterns from the user input 
-            string cleaned = input;
-            return cleaned;
+            var paths = new string[] { };
+            if(filepath.IndexOf("\\") >= 0)
+            {
+                paths = filepath.Split('\\');
+            }
+            else
+            {
+                filepath.Split('/');
+            }
+            
+            if(paths.Length > 1)
+            {
+                return paths[paths.Length - 1];
+            }
+            return filepath;
+        }
+
+        public string getFileExtension(string filename)
+        {
+            for (int x = filename.Length - 1; x >= 0; x += -1)
+            {
+                if (filename.Substring(x, 1) == ".")
+                {
+                    return filename.Substring(x + 1);
+                }
+            }
+
+            return "";
+        }
+
+        public string getFolder(string filename)
+        {
+            var paths = filename.Replace("/", "\\").Split('\\').ToList();
+            paths.RemoveAt(paths.Count - 1);
+            return string.Join("\\", paths.ToArray()) + "\\";
+        }
+
+        public string DateFolders(DateTime myDate, int folderCount = 3)
+        {
+            //generate folder paths based on given date
+            string myMonth = myDate.Month.ToString();
+            if (myMonth.Length == 1)
+                myMonth = "0" + myMonth;
+            string myDay = myDate.Day.ToString();
+            if (myDay.Length == 1)
+                myDay = "0" + myDay;
+            if (folderCount == 3)
+            {
+                return myDate.Year.ToString() + myMonth + "/" + myDay;
+            }
+            else if (folderCount == 1)
+            {
+                return myDate.Year.ToString() + myMonth;
+            }
+            else if (folderCount == 2)
+            {
+                return myDay;
+            }
+            return "";
+        }
+        #endregion
+
+        #region "Internet Related"
+        public string GetDomainName(string url)
+        {
+            string[] tmpDomain = GetSubDomainAndDomain(url).Split(new char[] { '.' }, 3);
+            if (tmpDomain.Length == 2)
+            {
+                return string.Join(".", tmpDomain);
+            }
+            else if (tmpDomain.Length == 3)
+            {
+                if (tmpDomain[1] == "co")
+                {
+                    return string.Join(".", tmpDomain); ;
+                }
+                return tmpDomain[1] + "." + tmpDomain[2];
+            }
+            return string.Join(".", tmpDomain);
+        }
+
+        public string GetSubDomainAndDomain(string url)
+        {
+            string strDomain = url.Replace("http://", "").Replace("https://", "").Replace("www.", "").Split('/')[0];
+            if (strDomain.IndexOf("localhost") >= 0 | strDomain.IndexOf("192.168") >= 0)
+            {
+                strDomain = "datasilk.io";
+            }
+            return strDomain.Replace("/", "");
+        }
+
+        public string[] GetDomainParts(string url)
+        {
+            string domainparts = GetSubDomainAndDomain(url);
+            string domain = GetDomainName(domainparts);
+            string sub = domainparts.Replace(domain, "");
+            if (sub != "")
+            {
+                return new string[] { sub, domain };
+            }
+            return new string[] { "", domain };
         }
         #endregion
     }
