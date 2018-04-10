@@ -12,7 +12,7 @@ namespace Datasilk
         public string favicon = "/images/favicon.png";
         public string scripts = "";
         public bool useTapestry = true;
-        public Dictionary<string, string> Form = new Dictionary<string, string>();
+        public IFormCollection Form;
         public IFormFileCollection Files;
 
         public Page(Core DatasilkCore) : base(DatasilkCore){}

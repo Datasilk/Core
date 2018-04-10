@@ -436,6 +436,7 @@ namespace Datasilk
                     if(form != null)
                     {
                         page.Files = form.Files;
+                        page.Form = form;
                     }
                     try
                     {
