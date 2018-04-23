@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
+using Utility.Serialization;
 
 namespace Datasilk
 {
@@ -25,10 +26,7 @@ namespace Datasilk
             public string css;
         }
 
-        public Service(Core DatasilkCore) : base(DatasilkCore)
-        {
-            S = DatasilkCore;
-        }
+        public Service(HttpContext context) : base(context) { }
 
         public string AccessDenied()
         {
@@ -37,7 +35,7 @@ namespace Datasilk
 
         public string Error(string message)
         {
-            S.Response.StatusCode = 500;
+            context.Response.StatusCode = 500;
             return message;
         }
 
@@ -56,7 +54,7 @@ namespace Datasilk
                 javascript = javascript,
                 css = css
             };
-            return "{\"d\":" + S.Util.Serializer.WriteObjectToString(response) + "}";
+            return "{\"d\":" + Serializer.WriteObjectToString(response) + "}";
         }
 
         public string Inject(Response response)

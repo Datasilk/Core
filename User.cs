@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
-using Newtonsoft.Json;
+using Utility.Serialization;
+using Utility.Strings;
 
 
 namespace Datasilk
 {
 
     public class User
-    { 
-
-        [JsonIgnore]
-        public Core S;
-
+    {
         public int userId = 0;
         public short userType = 0;
         public string visitorId = "";
@@ -30,19 +28,21 @@ namespace Datasilk
         public DateTime datecreated;
         public Dictionary<string, string> Data = new Dictionary<string, string>();
 
-        [JsonIgnore]
-        public bool saveSession = false;
+        protected bool changed = false;
+        protected HttpContext context;
 
-        public void Init(Core DatasilkCore)
+        //constructor
+        public User(HttpContext context) { this.context = context; }
+
+        public virtual void Init()
         {
-            S = DatasilkCore;
-
             //generate visitor id
             if (visitorId == "" || visitorId == null) {
-                visitorId = S.Util.Str.CreateID(); saveSession = true;
+                visitorId = Generate.NewId();
+                changed = true;
 
                 //check for authentication cookie
-                var identity = (ClaimsIdentity)S.Context.User.Identity;
+                var identity = (ClaimsIdentity)context.User.Identity;
                 if(identity != null)
                 {
                     if(identity.IsAuthenticated == true)
@@ -60,13 +60,17 @@ namespace Datasilk
             }
         }
 
-        public virtual void Load()
+        public void Save(bool changed = false)
         { 
+            if(this.changed == true || changed == true)
+            {
+                context.Session.Set("user", Serializer.WriteObject(this));
+            }
         }
+
 
         public void LogIn(int userId, string email, string name, DateTime datecreated, string displayName = "", short userType = 1, bool photo = false)
         {
-            Load();
             this.userId = userId;
             this.userType = userType;
             this.email = email;
@@ -74,7 +78,7 @@ namespace Datasilk
             this.name = name;
             this.displayName = displayName;
             this.datecreated = datecreated;
-            saveSession = true;
+            changed = true;
 
             //create authentication cookie on sign in
             var claims = new List<Claim>
@@ -97,7 +101,7 @@ namespace Datasilk
                 IsPersistent = true
             };
 
-            S.Context.SignInAsync(
+            context.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
@@ -105,16 +109,15 @@ namespace Datasilk
 
         public void LogOut()
         {
-            Load();
             userId = 0;
             email = "";
             name = "";
             photo = false;
-            saveSession = true;
-            S.Session.Remove("user");
+            changed = true;
+            context.Session.Remove("user");
 
             //update authentication cookie when sign out
-            S.Context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
     }
 }

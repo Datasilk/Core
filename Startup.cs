@@ -4,6 +4,7 @@ using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -13,19 +14,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
+using Utility.Serialization;
+using Utility.Strings;
 
 namespace Datasilk
 {
     public class Startup
     {
-        protected static Server server;
+        protected Server server = Server.Instance;
         protected static IConfigurationRoot config;
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
             //load application-wide cache
-            server = new Server();
-
             config = new ConfigurationBuilder()
                 .AddJsonFile(server.MapPath("config.json"))
                 .AddEnvironmentVariables().Build();
@@ -106,18 +107,19 @@ namespace Datasilk
             app.UseStaticFiles(options);
 
             //exception handling
-            var errOptions = new DeveloperExceptionPageOptions();
-            errOptions.SourceCodeLineCount = 10;
+            var errOptions = new DeveloperExceptionPageOptions
+            {
+                SourceCodeLineCount = 10
+            };
             app.UseDeveloperExceptionPage();
 
             //server if finished configuring
             Configured(app, env, config);
 
             //run Datasilk application
-            app.Run(async (context) =>
-            {
-                Run(context);
-            });
+#pragma warning disable CS1998
+            app.Run(async (context) => Run(context));
+#pragma warning restore CS1998
         }
 
         public virtual void Configured(IApplicationBuilder app, IHostingEnvironment env, IConfigurationRoot config){}
@@ -129,7 +131,7 @@ namespace Datasilk
             DateTime requestEnd;
             TimeSpan tspan;
             var requestType = "";
-            var path = cleanPath(context.Request.Path.ToString());
+            var path = CleanPath(context.Request.Path.ToString());
             var paths = path.Split('/').ToArray();
             var extension = "";
 
@@ -195,7 +197,7 @@ namespace Datasilk
                     //run a web service via ajax (e.g. /api/namespace/class/function) //////////////////////////////////////////////////////////////////////////////////////////////////////
                     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                     
-                    if (cleanNamespace(paths))
+                    if (CleanNamespace(paths))
                     {
                         //execute web service
                         requestType = "service";
@@ -236,21 +238,18 @@ namespace Datasilk
                             }
                         }
 
-                        //start building Web API response (find method to execute & return results)
-                        var S = new Core(server, context);
-
                         //load service class from URL path
-                        string className = S.Server.nameSpace + ".Services." + paths[1];
+                        string className = server.nameSpace + ".Services." + paths[1];
                         string methodName = paths[2];
                         if (paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
-                        var routes = new global::Routes(S);
+                        var routes = new global::Routes(context);
                         var service = routes.FromServiceRoutes(className);
                         if (service == null)
                         {
                             try
                             {
                                 Type stype = Type.GetType(className);
-                                service = (Service)Activator.CreateInstance(stype, new object[] { S });
+                                service = (Service)Activator.CreateInstance(stype, new object[] { context });
                             }
                             catch (Exception) { }
                         }
@@ -258,16 +257,16 @@ namespace Datasilk
                         //check if service class was found
                         if (service == null)
                         {
-                            S.Response.ContentType = "text/html";
-                            context.Response.WriteAsync("no service found");
-                            S.Unload();
+                            context.Response.ContentType = "text/html";
+                            context.Response.StatusCode = 500;
+                            await context.Response.WriteAsync("no service found");
                             return;
                         }
 
                         if (dataType == 1)
                         {
                             //parse HTML form POST data and send to new Service instance
-                            string[] items = S.Server.UrlDecode(data).Split('&');
+                            string[] items = Uri.UnescapeDataString(data).Split('&');
                             string[] item;
                             for (var x = 0; x < items.Length; x++)
                             {
@@ -315,8 +314,7 @@ namespace Datasilk
                             //cast params to correct (supported) types
                             if (methodParams[x].ParameterType.Name != "String")
                             {
-                                var i = 0;
-                                if (int.TryParse(param, out i) == true)
+                                if (int.TryParse(param, out int i) == true)
                                 {
                                     if (methodParams[x].ParameterType.IsEnum == true)
                                     {
@@ -345,7 +343,7 @@ namespace Datasilk
                                         catch (Exception) { }
                                     }
                                 }
-                                else if(methodParams[x].ParameterType.IsArray)
+                                else if (methodParams[x].ParameterType.IsArray)
                                 {
                                     var arr = param.Replace("[", "").Replace("]", "").Replace("\r", "").Replace("\n", "").Split(",").Select(a => { return a.Trim(); }).ToList();
                                     if (methodParams[x].ParameterType.FullName == "System.Int32[]")
@@ -356,12 +354,12 @@ namespace Datasilk
                                     {
                                         paramVals[x] = Convert.ChangeType(arr, methodParams[x].ParameterType);
                                     }
-                                    
-                                    
+
+
                                 }
-                                else if(methodParams[x].ParameterType.Name.IndexOf("Dictionary") == 0)
+                                else if (methodParams[x].ParameterType.Name.IndexOf("Dictionary") == 0)
                                 {
-                                    paramVals[x] = (Dictionary<string, string>)S.Util.Serializer.ReadObject(param, typeof(Dictionary<string, string>));
+                                    paramVals[x] = (Dictionary<string, string>)Serializer.ReadObject(param, typeof(Dictionary<string, string>));
                                 }
                                 else
                                 {
@@ -387,7 +385,7 @@ namespace Datasilk
                         {
                             if (server.environment == Server.enumEnvironment.development)
                             {
-                                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                                Console.WriteLine(ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
                             }
                             throw ex;
                         }
@@ -395,15 +393,14 @@ namespace Datasilk
 
                         //finally, unload the Datasilk Core:
                         //close SQL connection, save User info, etc (before sending response)
-                        S.Unload();
                         context.Response.ContentType = "text/json";
                         if (result != null)
                         {
-                            context.Response.WriteAsync((string)result);
+                            await context.Response.WriteAsync((string)result);
                         }
                         else
                         {
-                            context.Response.WriteAsync("{\"error\":\"no content returned\"}");
+                            await context.Response.WriteAsync("{\"error\":\"no content returned\"}");
                         }
                     }
                 }
@@ -415,29 +412,23 @@ namespace Datasilk
                 //page request (initialize client-side application) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 requestType = "page";
-                var S = new Core(server, context);
 
                 //create instance of Page class based on request URL path
                 var html = "";
                 var newpaths = path.Split('?', 2)[0].Split('/');
-                var routes = new global::Routes(S);
+                var routes = new global::Routes(context);
                 var page = routes.FromPageRoutes(newpaths[0].ToLower());
 
                 if (page == null)
                 {
                     //page is not part of any known routes, try getting page class manually
-                    Type type = Type.GetType((S.Server.nameSpace + ".Pages." + (newpaths[0] == "" ? "Login" : S.Util.Str.Capitalize(newpaths[0].Replace("-", " ")).Replace(" ", ""))));
-                    page = (Page)Activator.CreateInstance(type, new object[] { S });
+                    Type type = Type.GetType((server.nameSpace + ".Pages." + (newpaths[0] == "" ? "Login" : newpaths[0].Capitalize().Replace("-", " ")).Replace(" ", "")));
+                    page = (Page)Activator.CreateInstance(type, new object[] { context });
                 }
 
                 if (page != null)
                 {
                     //render page
-                    if(form != null)
-                    {
-                        page.Files = form.Files;
-                        page.Form = form;
-                    }
                     try
                     {
                         html = page.Render(newpaths);
@@ -451,17 +442,17 @@ namespace Datasilk
                 else
                 {
                     //show 404 error
-                    page = new Page(S);
+                    page = new Page(context);
                     html = page.Error404();
                 }
 
                 //unload Datasilk Core
+                page.Unload();
                 page = null;
-                S.Unload();
 
                 //send response back to client
-                S.Response.ContentType = "text/html";
-                await S.Response.WriteAsync(html);
+                context.Response.ContentType = "text/html";
+                await context.Response.WriteAsync(html);
             }
 
             if (server.environment == Server.enumEnvironment.development)
@@ -474,7 +465,7 @@ namespace Datasilk
             }
         }
 
-        private string cleanPath(string path)
+        private string CleanPath(string path)
         {
             //check for malicious path input
             if(path == "") { return path; }
@@ -496,7 +487,7 @@ namespace Datasilk
                 .Replace("*","");
         }
 
-        private bool cleanNamespace(string[] paths)
+        private bool CleanNamespace(string[] paths)
         {
             //check for malicious namespace in web service request
             foreach(var p in paths)

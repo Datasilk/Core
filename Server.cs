@@ -2,35 +2,37 @@
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using Utility.Serialization;
 
-public class Server
+public sealed class Server
 {
-    ////////////////////////////////////////////////
-    //Server     (for application-wide memory store)
-    ////////////////////////////////////////////////
+    //create Server instance as singleton
+    private Server() { }
+    public static Server Instance { get; } = new Server();
 
+    //environment
     public enum enumEnvironment
     {
         development = 0,
         staging = 1,
         production = 2
     }
-
-    public string Version = "0.7.8";
-    public Utility.Util Util = new Utility.Util();
     public enumEnvironment environment = enumEnvironment.development;
+
+    //server properties
     public DateTime serverStart = DateTime.Now;
     public double requestCount = 0;
     public float requestTime = 0;
+
+    //config properties
+    public IConfiguration config;
     public string nameSpace = "";
     public string sqlActive = "";
     public string sqlConnectionString = "";
-    public Random Random = new Random();
-    public IConfiguration config;
     public int bcrypt_workfactor = 10;
     public string salt = "";
-    public bool hasAdmin = false; //if set to true, admin exists
-    public bool resetPass = false; //if set to true, require admin password to be reset 
+    public bool hasAdmin = false; //no admin account exists
+    public bool resetPass = false; //force admin to reset password
     public Dictionary<string, string> languages;
 
     private string _path = "";
@@ -45,25 +47,12 @@ public class Server
     //         where data is injected in between each array item.
     public Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
 
-    #region "System.UI.Web.Page.Server methods"
     public string MapPath(string strPath = "") {
         if (_path == "") { _path = Path.GetFullPath(".") + "\\"; }
         var str = strPath.Replace("/", "\\");
         if (str.Substring(0, 1) == "\\") { str = str.Substring(1); }
         return _path + str;
     }
-
-    public string UrlDecode(string strPath)
-    {
-        return Uri.UnescapeDataString(strPath);
-    }
-
-    public string UrlEncode(string strPath)
-    {
-        return Uri.EscapeDataString(strPath);
-    }
-
-    #endregion
 
     #region "Cache"
     /// <summary>
@@ -126,12 +115,12 @@ public class Server
         if(Cache[key] == null)
         {
             var obj = value();
-            SaveToCache(key, serialize ? (object)Util.Serializer.WriteObjectToString(obj) : obj);
+            SaveToCache(key, serialize ? (object)Serializer.WriteObjectToString(obj) : obj);
             return obj;
         }
         else
         {
-            return serialize ? (T)Util.Serializer.ReadObject((string)Cache[key], typeof(T)) : (T)Cache[key];
+            return serialize ? (T)Serializer.ReadObject((string)Cache[key], typeof(T)) : (T)Cache[key];
         }
     }
     #endregion

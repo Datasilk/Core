@@ -5,19 +5,12 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Utility
+namespace Utility.Serialization
 {
-    public class Serializer
+    public static class Serializer
     {
-        private Util Util;
-
-        public Serializer(Util util)
-        {
-            Util = util;
-        }
-
         #region "Write"
-        public string WriteObjectToString(object obj, Formatting formatting = Formatting.None, TypeNameHandling nameHandling = TypeNameHandling.Auto, Newtonsoft.Json.Serialization.IContractResolver contractResolver = null)
+        public static string WriteObjectToString(object obj, Formatting formatting = Formatting.None, TypeNameHandling nameHandling = TypeNameHandling.Auto, Newtonsoft.Json.Serialization.IContractResolver contractResolver = null)
         {
             var resolver = contractResolver;
             if(resolver == null)
@@ -33,14 +26,14 @@ namespace Utility
                     });
         }
 
-        public byte[] WriteObject(object obj, Formatting formatting = Formatting.None, TypeNameHandling nameHandling = TypeNameHandling.Auto)
+        public static byte[] WriteObject(object obj, Formatting formatting = Formatting.None, TypeNameHandling nameHandling = TypeNameHandling.Auto)
         {
-            return Util.Str.GetBytes(WriteObjectToString(obj, formatting, nameHandling));
+            return Strings.Generic.GetBytes(WriteObjectToString(obj, formatting, nameHandling));
         }
 
-        public void WriteObjectToFile(object obj, string file, Formatting formatting = Formatting.Indented, TypeNameHandling nameHandling = TypeNameHandling.Auto)
+        public static void WriteObjectToFile(object obj, string file, Formatting formatting = Formatting.Indented, TypeNameHandling nameHandling = TypeNameHandling.Auto)
         {
-            var path = Util.Str.getFolder(file);
+            var path = Strings.FileSystem.GetFolder(file);
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -50,12 +43,12 @@ namespace Utility
         #endregion
 
         #region "Read"
-        public object ReadObject(string str, Type objType, TypeNameHandling nameHandling = TypeNameHandling.Auto)
+        public static object ReadObject(string str, Type objType, TypeNameHandling nameHandling = TypeNameHandling.Auto)
         {
             return JsonConvert.DeserializeObject(str, objType, new JsonSerializerSettings() { TypeNameHandling = nameHandling });
         }
 
-        public object OpenFromFile(Type objType, string file, TypeNameHandling nameHandling = TypeNameHandling.Auto)
+        public static object OpenFromFile(Type objType, string file, TypeNameHandling nameHandling = TypeNameHandling.Auto)
         {
             return ReadObject(File.ReadAllText(file), objType);
         }

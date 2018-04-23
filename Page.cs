@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System.Text;
 using Microsoft.AspNetCore.Http;
 
 namespace Datasilk
@@ -8,32 +8,30 @@ namespace Datasilk
 
         public string title = "Datasilk";
         public string description = "";
-        public string headCss = "";
         public string favicon = "/images/favicon.png";
-        public string scripts = "";
         public bool useTapestry = true;
-        public IFormCollection Form;
-        public IFormFileCollection Files;
+        public StringBuilder scripts = new StringBuilder();
+        public StringBuilder headCss = new StringBuilder();
 
-        public Page(Core DatasilkCore) : base(DatasilkCore){}
+        public Page(HttpContext context) : base(context){}
 
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {
             //renders HTML layout
-            var scaffold = new Scaffold("/layout.html", S.Server.Scaffold);
+            var scaffold = new Scaffold("/layout.html", server.Scaffold);
             scaffold.Data["title"] = title;
             scaffold.Data["description"] = description;
-            scaffold.Data["head-css"] = headCss;
+            scaffold.Data["head-css"] = headCss.ToString();
             scaffold.Data["favicon"] = favicon;
             scaffold.Data["body"] = body;
 
             //add initialization script
-            scaffold.Data["scripts"] = scripts;
+            scaffold.Data["scripts"] = scripts.ToString();
 
             return scaffold.Render();
         }
 
-        public string AccessDenied(bool htmlOutput = true, Page login = null)
+        protected string AccessDenied(bool htmlOutput = true, Page login = null)
         {
             if (htmlOutput == true)
             {
@@ -41,31 +39,25 @@ namespace Datasilk
                 {
                     return login.Render(new string[] { });
                 }
-                var scaffold = new Scaffold("/access-denied.html", S.Server.Scaffold);
+                var scaffold = new Scaffold("/access-denied.html", server.Scaffold);
                 return scaffold.Render();
             }
             return "Access Denied";
         }
 
-        public string Redirect(string url)
+        protected string Redirect(string url)
         {
             return "<script language=\"javascript\">window.location.href = '" + url + "';</script>";
         }
 
-        public void AddScript(string url, string id = "")
+        protected void AddScript(string url, string id = "")
         {
-            scripts += "<script language=\"javascript\"" + (id != "" ? " id=\"" + id + "\"" : "") + " src=\"" + url + "\"></script>";
+            scripts.Append("<script language=\"javascript\"" + (id != "" ? " id=\"" + id + "\"" : "") + " src=\"" + url + "\"></script>");
         }
 
-        public void AddCSS(string url, string id = "")
+        protected void AddCSS(string url, string id = "")
         {
-            headCss += "<link rel=\"stylesheet\" type=\"text/css\"" + (id != "" ? " id=\"" + id + "\"" : "") + " href=\"" + url + "\"></link>";
-        }
-
-        public void LoadPartial(ref Page page)
-        {
-            page.Files = Files;
-            page.Form = Form;
+            headCss.Append("<link rel=\"stylesheet\" type=\"text/css\"" + (id != "" ? " id=\"" + id + "\"" : "") + " href=\"" + url + "\"></link>");
         }
     }
 }

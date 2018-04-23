@@ -1,13 +1,11 @@
-﻿namespace Datasilk
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Datasilk
 {
     public class Routes
     {
-        protected Core S;
-
-        public Routes(Core DatasilkCore)
-        {
-            S = DatasilkCore;
-        }
+        protected HttpContext context;
+        public Routes(HttpContext context) { this.context = context; }
 
         public virtual Page FromPageRoutes(string name)
         {
