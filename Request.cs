@@ -13,31 +13,31 @@ namespace Datasilk
 
         public Request(HttpContext context) { this.context = context; }
 
-        private User _user;
+        private User user;
         public virtual User User
         {
             get
             {
-                if(_user == null)
+                if(user == null)
                 {
                     //load user session
                     if (context.Session.Get("user") != null)
                     {
-                        _user = (User)Serializer.ReadObject(context.Session.Get("user").GetString(), typeof(User));
+                        user = (User)Serializer.ReadObject(context.Session.Get("user").GetString(), typeof(User));
                     }
                     else
                     {
-                        _user = new User(context);
+                        user = new User(context);
                     }
-                    _user.Init();
+                    user.Init();
                 }
-                return _user;
+                return user;
             }
         }
 
         public virtual void Unload()
         {
-            if (_user != null) { User.Save(); }
+            if (user != null) { User.Save(); }
         }
 
         public bool CheckSecurity()
