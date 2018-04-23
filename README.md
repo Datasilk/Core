@@ -28,15 +28,19 @@ public class Startup: Datasilk.Startup{ }
 
 6. Create a new class `/Routes.cs` in the root of your ASP.NET Core project and replace everything with:
 ```
-public class Routes: Datasilk.Routes
+using Microsoft.AspNetCore.Http;
+using Datasilk;
+
+public class Routes : Datasilk.Routes
 {
-    public Routes(Core DatasilkCore) : base(DatasilkCore) {}
+    public Routes(HttpContext context) : base(context) { }
 }
+
 ```
 
 7. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
 
-8. In Visual Studio, change the properties for all `.html` files to copy to Output Folder (if newer). This will ensure that these files are copied when publishing your web application to IIS
+8. In Visual Studio, change the properties for all `.html` files to copy to Output Folder (if newer). This will ensure that these files are copied when *publishing* your web application to IIS
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web pages & web services.
 
@@ -63,11 +67,13 @@ All page request URLs are mapped to classes that inherit the `Datasilk.Page` cla
 # 
 
 ```
+using Microsoft.AspNetCore.Http;
+
 namespace MyProject.Pages
 {
     public class Home: Datasilk.Page
     {
-        public Home(Core MyCore) : base(MyCore) {}
+        public Home(HttpContext context) : base(context) {}
 
         public override string Render(string[] path, string body = "", object metadata = null)
 		{
@@ -96,10 +102,6 @@ The request path is split up into an array and passed into the overridable `Rend
 
 ### Datasilk.Page
 Inherited in classes that are used to render page requests.
-
-### Global `S` Object
-
-The `S` object (or "Super" object) is a global object that gives developers access to the `HttpContext` object via `S.Context`, the Web Server class  via `S.Server` (along with server-wide caching functionality), a persistant user object that is unique to each user session via `S.User`, and other `HttpContext` pointer objects via `S.Request`, `S.Response`, `S.Session`.
  
 ### Layout.html
 `/layout.html` contains the `<html>`, `<head>` & `<body>` tags for the page, along with `<meta>` tags, `<link/>` tags for CSS, and `<script>` tags or Javascript files.
@@ -119,11 +121,13 @@ The Datasilk Core framework comes with the ability to call `RESTful` web APIs. A
 #### Example
 
 ```
+using Microsoft.AspNetCore.Http;
+
 namespace MyProject.Services
 {
     public class User: Datasilk.Service
     {
-        public User(Core MyCore) : base(MyCore) {}
+        public User(HttpContext context) : base(context) {}
 
         public string Authenticate(string email, string password)
 		{
@@ -154,9 +158,12 @@ return Inject(".myclass", injectType.replace, myHtml, myJavascript, myCss)
 ## Routes.cs
 Your project now includes `Routes.cs`, an empty class file in the root folder. Use it by mapping request path names to new instances of `Datasilk.Page` classes. For example:
 ```
-public class Routes: Datasilk.Routes
+using Microsoft.AspNetCore.Http;
+using Datasilk;
+
+public class Routes : Datasilk.Routes
 {
-    public Routes(Core DatasilkCore) : base(DatasilkCore) {}
+    public Routes(HttpContext context) : base(context) { }
 
     public override Page FromPageRoutes(string name)
     {
