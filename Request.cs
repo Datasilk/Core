@@ -29,7 +29,7 @@ namespace Datasilk
                     {
                         user = new User(context);
                     }
-                    user.Init();
+                    user.Init(context);
                 }
                 return user;
             }

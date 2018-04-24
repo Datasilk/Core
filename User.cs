@@ -34,9 +34,10 @@ namespace Datasilk
         //constructor
         public User(HttpContext context) { this.context = context; }
 
-        public virtual void Init()
+        public virtual void Init(HttpContext context)
         {
             //generate visitor id
+            this.context = context;
             if (visitorId == "" || visitorId == null) {
                 visitorId = Generate.NewId();
                 changed = true;
