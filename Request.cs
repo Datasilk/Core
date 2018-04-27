@@ -9,7 +9,7 @@ namespace Datasilk
     public class Request
     {
         protected HttpContext context;
-        protected Server server { get; } = Server.Instance;
+        protected Server Server { get; } = Server.Instance;
 
         public Request(HttpContext context) { this.context = context; }
 
@@ -61,13 +61,13 @@ namespace Datasilk
         public string Error()
         {
             context.Response.StatusCode = 500;
-            return server.LoadFileFromCache("/Pages/500.html");
+            return Server.LoadFileFromCache("/Pages/500.html");
         }
 
         public string Error404()
         {
             context.Response.StatusCode = 404;
-            return server.LoadFileFromCache("/Pages/404.html");
+            return Server.LoadFileFromCache("/Pages/404.html");
         }
     }
 }

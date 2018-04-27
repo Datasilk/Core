@@ -28,7 +28,7 @@ namespace Datasilk
         {
             //load application-wide cache
             config = new ConfigurationBuilder()
-                .AddJsonFile(server.MapPath("config.json"))
+                .AddJsonFile(Server.MapPath("config.json"))
                 .AddEnvironmentVariables().Build();
 
             server.config = config;
@@ -41,15 +41,15 @@ namespace Datasilk
             {
                 case "development":
                 case "dev":
-                    server.environment = Server.enumEnvironment.development;
+                    server.environment = Server.Environment.development;
                     break;
                 case "staging":
                 case "stage":
-                    server.environment = Server.enumEnvironment.staging;
+                    server.environment = Server.Environment.staging;
                     break;
                 case "production":
                 case "prod":
-                    server.environment = Server.enumEnvironment.production;
+                    server.environment = Server.Environment.production;
                     break;
             }
 
@@ -149,7 +149,7 @@ namespace Datasilk
 
             server.requestCount += 1;
 
-            if (server.environment == Server.enumEnvironment.development)
+            if (server.environment == Server.Environment.development)
             {
                 Console.WriteLine("--------------------------------------------");
                 Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
@@ -383,7 +383,7 @@ namespace Datasilk
                         }
                         catch (Exception ex)
                         {
-                            if (server.environment == Server.enumEnvironment.development)
+                            if (server.environment == Server.Environment.development)
                             {
                                 Console.WriteLine(ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
                             }
@@ -455,7 +455,7 @@ namespace Datasilk
                 await context.Response.WriteAsync(html);
             }
 
-            if (server.environment == Server.enumEnvironment.development)
+            if (server.environment == Server.Environment.development)
             {
                 requestEnd = DateTime.Now;
                 tspan = requestEnd - requestStart;
