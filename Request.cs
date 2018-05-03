@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Utility.Strings;
-using Utility.Serialization;
 
 namespace Datasilk
 {
@@ -14,28 +12,19 @@ namespace Datasilk
         public Request(HttpContext context) { this.context = context; }
 
         private User user;
-        public virtual User User
+        public User User
         {
             get
             {
                 if(user == null)
                 {
-                    //load user session
-                    if (context.Session.Get("user") != null)
-                    {
-                        user = (User)Serializer.ReadObject(context.Session.Get("user").GetString(), typeof(User));
-                    }
-                    else
-                    {
-                        user = new User(context);
-                    }
-                    user.Init(context);
+                    user = User.Get(context);
                 }
                 return user;
             }
         }
 
-        public virtual void Unload()
+        public void Unload()
         {
             if (user != null) { User.Save(); }
         }
@@ -61,13 +50,13 @@ namespace Datasilk
         public string Error()
         {
             context.Response.StatusCode = 500;
-            return Server.LoadFileFromCache("/Pages/500.html");
+            return Server.LoadFileFromCache("/Views/500.html");
         }
 
         public string Error404()
         {
             context.Response.StatusCode = 404;
-            return Server.LoadFileFromCache("/Pages/404.html");
+            return Server.LoadFileFromCache("/Views/404.html");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -38,6 +39,7 @@ namespace Datasilk
         public static User Get(HttpContext context)
         {
             User user;
+            var keys = context.Session.Keys.ToList();
             if (context.Session.Get("user") != null)
             {
                 user = (User)Serializer.ReadObject(context.Session.Get("user").GetString(), typeof(User));
@@ -75,13 +77,20 @@ namespace Datasilk
                     }
                 }
             }
+            VendorInit();
         }
 
         public void Save(bool changed = false)
         { 
-            if(this.changed == true || changed == true)
+            if(this.changed == true && changed == false)
             {
+                VendorSave();
                 context.Session.Set("user", Serializer.WriteObject(this));
+                this.changed = false;
+            }
+            if(changed == true)
+            {
+                this.changed = true;
             }
         }
         
@@ -94,33 +103,11 @@ namespace Datasilk
             this.name = name;
             this.displayName = displayName;
             this.datecreated = datecreated;
+
+            //allow vendor to load settings for user as well
+            VendorLogIn();
+
             changed = true;
-
-            //create authentication cookie on sign in
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Name, name),
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim("visitorId", visitorId),
-                new Claim("displayName", displayName),
-                new Claim("userType", userType.ToString()),
-                new Claim("photo", photo == true ? "1" : "0"),
-                new Claim("dateCreated", datecreated.ToShortDateString() + " " + datecreated.ToLongTimeString())
-            };
-
-            var claimsIdentity = new ClaimsIdentity(
-                claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = true
-            };
-
-            context.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
         }
 
         public void LogOut()
@@ -134,6 +121,15 @@ namespace Datasilk
 
             //update authentication cookie when sign out
             context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            VendorLogOut();
         }
+
+        #region "Vendor-specific partial methods"
+        partial void VendorInit();
+        partial void VendorSave();
+        partial void VendorLogIn();
+        partial void VendorLogOut();
+        #endregion
     }
 }

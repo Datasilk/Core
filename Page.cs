@@ -31,7 +31,7 @@ namespace Datasilk
             return scaffold.Render();
         }
 
-        protected string AccessDenied(bool htmlOutput = true, Page login = null)
+        protected virtual string AccessDenied(bool htmlOutput = true, Page login = null)
         {
             if (htmlOutput == true)
             {

@@ -389,7 +389,7 @@ namespace Datasilk
                             }
                             throw ex;
                         }
-
+                        service.Unload();
 
                         //finally, unload the Datasilk Core:
                         //close SQL connection, save User info, etc (before sending response)
