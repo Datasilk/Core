@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Utility.Serialization;
 
@@ -6,9 +5,6 @@ namespace Datasilk
 {
     public class Service : Request
     {
-        public Dictionary<string, string> Form = new Dictionary<string, string>();
-        public IFormFileCollection Files;
-
         public enum injectType
         {
             replace = 0,

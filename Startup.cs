@@ -4,7 +4,7 @@ using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -23,9 +23,40 @@ namespace Datasilk
     {
         protected Server server = Server.Instance;
         protected static IConfigurationRoot config;
+        protected global::Routes routes = new global::Routes();
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
+            //set up server-side memory cache
+            services.AddDistributedMemoryCache();
+            services.AddMemoryCache();
+
+            //configure request form options
+            services.Configure<FormOptions>(x => 
+                {
+                    x.ValueLengthLimit = int.MaxValue;
+                    x.MultipartBodyLengthLimit = int.MaxValue;
+                    x.MultipartHeadersLengthLimit = int.MaxValue;
+                }
+            );
+
+            //add cookie expiration
+            services.AddAuthentication().AddCookie(opts =>
+            {
+                opts.Cookie.Expiration = TimeSpan.FromHours(24 * 7);
+                opts.Cookie.Name = server.nameSpace;
+            });
+            
+            //add session
+            services.AddSession();
+        }
+
+        public virtual void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            //set root server path
+            var path = env.WebRootPath.Replace("wwwroot", "");
+            server.RootPath = path;
+
             //load application-wide cache
             config = new ConfigurationBuilder()
                 .AddJsonFile(Server.MapPath("config.json"))
@@ -57,43 +88,18 @@ namespace Datasilk
             server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
             server.salt = config.GetSection("Encryption:salt").Value;
 
-            //set up server-side memory cache
-            services.AddDistributedMemoryCache();
-            services.AddMemoryCache();
-
-            //configure request form options
-            services.Configure<FormOptions>(x => 
-                {
-                    x.ValueLengthLimit = int.MaxValue;
-                    x.MultipartBodyLengthLimit = int.MaxValue;
-                    x.MultipartHeadersLengthLimit = int.MaxValue;
-                }
-            );
-
             //configure cookie-based authentication
             var expires = !string.IsNullOrEmpty(config.GetSection("Session:Expires").Value) ? int.Parse(config.GetSection("Session:Expires").Value) : 60;
 
-            services.AddAuthentication().AddCookie(opts =>
-            {
-                opts.Cookie.Expiration = TimeSpan.FromMinutes(expires);
-                opts.Cookie.Name = server.nameSpace;
-            });
-
-
-            //configure session
-            services.AddSession(opts =>
-            {
-                opts.Cookie.Name = server.nameSpace;
-                opts.IdleTimeout = TimeSpan.FromMinutes(expires);
-            });
-        }
-
-        public virtual void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
             //use cookie authentication
             app.UseAuthentication();
+
             //use session
-            app.UseSession();
+            var sessionOpts = new SessionOptions();
+            sessionOpts.Cookie.Name = server.nameSpace;
+            sessionOpts.IdleTimeout = TimeSpan.FromMinutes(expires);
+
+            app.UseSession(sessionOpts);
 
             //handle static files
             var provider = new FileExtensionContentTypeProvider();
@@ -117,37 +123,22 @@ namespace Datasilk
             Configured(app, env, config);
 
             //run Datasilk application
-#pragma warning disable CS1998
-            app.Run(async (context) => Run(context));
-#pragma warning restore CS1998
+            app.Run(async (context) => await Run(context));
         }
 
         public virtual void Configured(IApplicationBuilder app, IHostingEnvironment env, IConfigurationRoot config){}
 
-        public virtual async void Run(HttpContext context)
+        public virtual async Task Run(HttpContext context)
         {
             context.Features.Get<IHttpMaxRequestBodySizeFeature>().MaxRequestBodySize = null;
             var requestStart = DateTime.Now;
             DateTime requestEnd;
             TimeSpan tspan;
-            var requestType = "";
             var path = CleanPath(context.Request.Path.ToString());
             var paths = path.Split('/').ToArray();
-            var extension = "";
+            var isApiCall = false;
 
-            //get request file extension (if exists)
-            if (path.IndexOf(".") >= 0)
-            {
-                for (int x = path.Length - 1; x >= 0; x += -1)
-                {
-                    if (path.Substring(x, 1) == ".")
-                    {
-                        extension = path.Substring(x + 1); return;
-                    }
-                }
-            }
-
-            server.requestCount += 1;
+            server.requestCount++;
 
             if (server.environment == Server.Environment.development)
             {
@@ -158,266 +149,211 @@ namespace Datasilk
                 server.Scaffold = new Dictionary<string, SerializedScaffold>();
             }
 
-            //get form files (if any exist)
-            IFormCollection form = null;
-            if (context.Request.ContentType != null)
+            if (paths.Length > 1 && paths[0] == "api")
             {
-                if (context.Request.ContentType.IndexOf("multipart/form-data") >= 0)
-                {
-                    form = context.Request.Form;
-                }
-            }
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                //run a web service via ajax (e.g. /api/namespace/class/function) //////////////////////////////////////////////////////////////////////////////////////////////////////
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            byte[] bytes = new byte[0];
-            string data = "";
-            int dataType = 0; //0 = ajax, 1 = HTML form post, 2 = multi-part form (with file uploads)
+                //execute web service
+                server.apiRequestCount++;
+                isApiCall = true;
 
-            //figure out what kind of data was sent with the request
-            if (form == null && context.Request.Body.CanRead)
-            {
-                //get POST data from request
-                using (MemoryStream ms = new MemoryStream())
+                //get parameters from request body, including page id
+                var parms = new Dictionary<string, string>();
+                object[] paramVals;
+                var param = "";
+                string data = "";
+                if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
                 {
-                    context.Request.Body.CopyTo(ms);
-                    bytes = ms.ToArray();
-                }
-                data = Encoding.UTF8.GetString(bytes, 0, bytes.Length).Trim();
-            }
-            else
-            {
-                //form files exist
-                dataType = 2;
-            }
-
-            if (paths.Length > 1)
-            {
-                if (paths[0] == "api")
-                {
-                    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    //run a web service via ajax (e.g. /api/namespace/class/function) //////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    
-                    if (CleanNamespace(paths))
+                    //get POST data from request
+                    byte[] bytes = new byte[0];
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        //execute web service
-                        requestType = "service";
-                        //get parameters from request body, including page id
-                        var parms = new Dictionary<string, string>();
-                        object[] paramVals;
-                        var param = "";
-                        
+                        context.Request.Body.CopyTo(ms);
+                        bytes = ms.ToArray();
+                    }
+                    data = Encoding.UTF8.GetString(bytes, 0, bytes.Length).Trim();
+                }
 
-                        if (data.Length > 0)
+                if (data.Length > 0)
+                {
+                    if (data.IndexOf("Content-Disposition") < 0 && data.IndexOf("{") >= 0 && data.IndexOf("}") > 0 && data.IndexOf(":") > 0)
+                    {
+                        //get method parameters from POST S.ajax.post()
+                        Dictionary<string, object> attr = JsonConvert.DeserializeObject<Dictionary<string, object>>(data);
+                        foreach (KeyValuePair<string, object> item in attr)
                         {
-                            if (data.IndexOf("Content-Disposition") > 0)
-                            {
-                                //multi-part file upload
-                                dataType = 2;
-                            }
-                            else if (data.IndexOf("{") >= 0 && data.IndexOf("}") > 0 && data.IndexOf(":") > 0)
-                            {
-                                //get method parameters from POST S.ajax.post()
-                                Dictionary<string, object> attr = JsonConvert.DeserializeObject<Dictionary<string, object>>(data);
-                                foreach (KeyValuePair<string, object> item in attr)
-                                {
-                                    parms.Add(item.Key.ToLower(), item.Value.ToString());
-                                }
-                            }
-                            else if (data.IndexOf("=") >= 0)
-                            {
-                                //HTML form POST data
-                                dataType = 1;
-                            }
-                        }
-                        else
-                        {
-                            //get method parameters from query string
-                            foreach (var key in context.Request.Query.Keys)
-                            {
-                                parms.Add(key.ToLower(), context.Request.Query[key].ToString());
-                            }
-                        }
-
-                        //load service class from URL path
-                        string className = server.nameSpace + ".Services." + paths[1];
-                        string methodName = paths[2];
-                        if (paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
-                        var routes = new global::Routes(context);
-                        var service = routes.FromServiceRoutes(className);
-                        if (service == null)
-                        {
-                            try
-                            {
-                                Type stype = Type.GetType(className);
-                                service = (Service)Activator.CreateInstance(stype, new object[] { context });
-                            }
-                            catch (Exception) { }
-                        }
-
-                        //check if service class was found
-                        if (service == null)
-                        {
-                            context.Response.ContentType = "text/html";
-                            context.Response.StatusCode = 500;
-                            await context.Response.WriteAsync("no service found");
-                            return;
-                        }
-
-                        if (dataType == 1)
-                        {
-                            //parse HTML form POST data and send to new Service instance
-                            string[] items = Uri.UnescapeDataString(data).Split('&');
-                            string[] item;
-                            for (var x = 0; x < items.Length; x++)
-                            {
-                                item = items[x].Split('=');
-                                service.Form.Add(item[0], item[1]);
-                            }
-                        }
-                        else if (dataType == 2)
-                        {
-                            //send multi-part file upload data to new Service instance
-                            service.Files = form.Files;
-                        }
-
-                        //execute method from new Service instance
-                        Type type = Type.GetType(className);
-                        MethodInfo method = type.GetMethod(methodName);
-
-                        //try to cast params to correct types
-                        ParameterInfo[] methodParams = method.GetParameters();
-
-                        paramVals = new object[methodParams.Length];
-                        for (var x = 0; x < methodParams.Length; x++)
-                        {
-                            //find correct key/value pair
-                            param = "";
-                            foreach (var item in parms)
-                            {
-                                if (item.Key == methodParams[x].Name.ToLower())
-                                {
-                                    param = item.Value;
-                                    break;
-                                }
-                            }
-
-                            if (param == "")
-                            {
-                                //set default value for empty parameter
-                                var t = methodParams[x].ParameterType;
-                                if (t == typeof(Int32))
-                                {
-                                    param = "0";
-                                }
-                            }
-
-                            //cast params to correct (supported) types
-                            if (methodParams[x].ParameterType.Name != "String")
-                            {
-                                if (int.TryParse(param, out int i) == true)
-                                {
-                                    if (methodParams[x].ParameterType.IsEnum == true)
-                                    {
-                                        //enum
-                                        paramVals[x] = Enum.Parse(methodParams[x].ParameterType, param);
-                                    }
-                                    else
-                                    {
-                                        //int
-                                        paramVals[x] = Convert.ChangeType(i, methodParams[x].ParameterType);
-                                    }
-
-                                }
-                                else if (methodParams[x].ParameterType.FullName.Contains("DateTime"))
-                                {
-                                    if (param == "")
-                                    {
-                                        paramVals[x] = null;
-                                    }
-                                    else
-                                    {
-                                        try
-                                        {
-                                            paramVals[x] = DateTime.Parse(param);
-                                        }
-                                        catch (Exception) { }
-                                    }
-                                }
-                                else if (methodParams[x].ParameterType.IsArray)
-                                {
-                                    var arr = param.Replace("[", "").Replace("]", "").Replace("\r", "").Replace("\n", "").Split(",").Select(a => { return a.Trim(); }).ToList();
-                                    if (methodParams[x].ParameterType.FullName == "System.Int32[]")
-                                    {
-                                        paramVals[x] = arr.Select(a => { return int.Parse(a); }).ToArray();
-                                    }
-                                    else
-                                    {
-                                        paramVals[x] = Convert.ChangeType(arr, methodParams[x].ParameterType);
-                                    }
-
-
-                                }
-                                else if (methodParams[x].ParameterType.Name.IndexOf("Dictionary") == 0)
-                                {
-                                    paramVals[x] = (Dictionary<string, string>)Serializer.ReadObject(param, typeof(Dictionary<string, string>));
-                                }
-                                else
-                                {
-                                    paramVals[x] = Convert.ChangeType(param, methodParams[x].ParameterType);
-                                }
-                            }
-                            else
-                            {
-                                //string
-                                paramVals[x] = param;
-                            }
-
-
-                        }
-
-                        object result = null;
-
-                        try
-                        {
-                            result = method.Invoke(service, paramVals);
-                        }
-                        catch (Exception ex)
-                        {
-                            if (server.environment == Server.Environment.development)
-                            {
-                                Console.WriteLine(ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
-                            }
-                            throw ex;
-                        }
-                        service.Unload();
-
-                        //finally, unload the Datasilk Core:
-                        //close SQL connection, save User info, etc (before sending response)
-                        context.Response.ContentType = "text/json";
-                        if (result != null)
-                        {
-                            await context.Response.WriteAsync((string)result);
-                        }
-                        else
-                        {
-                            await context.Response.WriteAsync("{\"error\":\"no content returned\"}");
+                            parms.Add(item.Key.ToLower(), item.Value.ToString());
                         }
                     }
                 }
-            }
+                else
+                {
+                    //get method parameters from query string
+                    foreach (var key in context.Request.Query.Keys)
+                    {
+                        parms.Add(key.ToLower(), context.Request.Query[key].ToString());
+                    }
+                }
 
-            if (requestType == "" && extension == "")
+                //load service class from URL path
+                string className = server.nameSpace + ".Services." + paths[1];
+                string methodName = paths[2];
+                if (paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
+                var service = routes.FromServiceRoutes(context, className);
+                if (service == null)
+                {
+                    try
+                    {
+                        service = (Service)Activator.CreateInstance(Type.GetType(className), new object[] { context });
+                    }
+                    catch (Exception) { }
+                }
+
+                //check if service class was found
+                if (service == null)
+                {
+                    context.Response.ContentType = "text/html";
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("no service found");
+                    return;
+                }
+
+                //execute method from new Service instance
+                Type type = Type.GetType(className);
+                MethodInfo method = type.GetMethod(methodName);
+
+                //try to cast params to correct types
+                ParameterInfo[] methodParams = method.GetParameters();
+
+                paramVals = new object[methodParams.Length];
+                for (var x = 0; x < methodParams.Length; x++)
+                {
+                    //find correct key/value pair
+                    param = "";
+                    foreach (var item in parms)
+                    {
+                        if (item.Key == methodParams[x].Name.ToLower())
+                        {
+                            param = item.Value;
+                            break;
+                        }
+                    }
+
+                    if (param == "")
+                    {
+                        //set default value for empty parameter
+                        var t = methodParams[x].ParameterType;
+                        if (t == typeof(Int32))
+                        {
+                            param = "0";
+                        }
+                    }
+
+                    //cast params to correct (supported) types
+                    if (methodParams[x].ParameterType.Name != "String")
+                    {
+                        if (int.TryParse(param, out int i) == true)
+                        {
+                            if (methodParams[x].ParameterType.IsEnum == true)
+                            {
+                                //enum
+                                paramVals[x] = Enum.Parse(methodParams[x].ParameterType, param);
+                            }
+                            else
+                            {
+                                //int
+                                paramVals[x] = Convert.ChangeType(i, methodParams[x].ParameterType);
+                            }
+
+                        }
+                        else if (methodParams[x].ParameterType.FullName.Contains("DateTime"))
+                        {
+                            if (param == "")
+                            {
+                                paramVals[x] = null;
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    paramVals[x] = DateTime.Parse(param);
+                                }
+                                catch (Exception) { }
+                            }
+                        }
+                        else if (methodParams[x].ParameterType.IsArray)
+                        {
+                            var arr = param.Replace("[", "").Replace("]", "").Replace("\r", "").Replace("\n", "").Split(",").Select(a => { return a.Trim(); }).ToList();
+                            if (methodParams[x].ParameterType.FullName == "System.Int32[]")
+                            {
+                                paramVals[x] = arr.Select(a => { return int.Parse(a); }).ToArray();
+                            }
+                            else
+                            {
+                                paramVals[x] = Convert.ChangeType(arr, methodParams[x].ParameterType);
+                            }
+
+
+                        }
+                        else if (methodParams[x].ParameterType.Name.IndexOf("Dictionary") == 0)
+                        {
+                            paramVals[x] = (Dictionary<string, string>)Serializer.ReadObject(param, typeof(Dictionary<string, string>));
+                        }
+                        else
+                        {
+                            paramVals[x] = Convert.ChangeType(param, methodParams[x].ParameterType);
+                        }
+                    }
+                    else
+                    {
+                        //string
+                        paramVals[x] = param;
+                    }
+
+
+                }
+
+                object result = null;
+
+                try
+                {
+                    result = method.Invoke(service, paramVals);
+                }
+                catch (Exception ex)
+                {
+                    if (server.environment == Server.Environment.development)
+                    {
+                        Console.WriteLine(ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
+                    }
+                    throw ex;
+                }
+                service.Unload();
+
+                //finally, unload the Datasilk Core:
+                //close SQL connection, save User info, etc (before sending response)
+                context.Response.ContentType = "text/json";
+                if (result != null)
+                {
+                    await context.Response.WriteAsync((string)result);
+                }
+                else
+                {
+                    await context.Response.WriteAsync("{\"error\":\"no content returned\"}");
+                }
+            }
+            else
             {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 //page request (initialize client-side application) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                requestType = "page";
+                server.pageRequestCount++;
 
                 //create instance of Page class based on request URL path
                 var html = "";
                 var newpaths = path.Split('?', 2)[0].Split('/');
-                var routes = new global::Routes(context);
-                var page = routes.FromPageRoutes(newpaths[0].ToLower());
+                var page = routes.FromPageRoutes(context, newpaths[0].ToLower());
 
                 if (page == null)
                 {
@@ -460,10 +396,12 @@ namespace Datasilk
                 requestEnd = DateTime.Now;
                 tspan = requestEnd - requestStart;
                 server.requestTime += (tspan.Seconds);
-                Console.WriteLine("END REQUEST {0} ms, {1} {2}", tspan.Milliseconds, path, requestType);
+                Console.WriteLine("END REQUEST {0} ms, {1} {2}", tspan.Milliseconds, path, isApiCall ? "Web API" : "Page");
                 Console.WriteLine("");
             }
         }
+
+        #region "Utility"
 
         private string CleanPath(string path)
         {
@@ -485,16 +423,6 @@ namespace Datasilk
                 .Replace("$","")
                 .Replace("!","")
                 .Replace("*","");
-        }
-
-        private bool CleanNamespace(string[] paths)
-        {
-            //check for malicious namespace in web service request
-            foreach(var p in paths)
-            {
-                if (!p.All(a => char.IsLetter(a))) { return false; }
-            }
-            return true;
         }
 
         private static bool IsMultipartContentType(string contentType)
@@ -520,5 +448,7 @@ namespace Datasilk
                    && (!string.IsNullOrEmpty(contentDisposition.FileName.ToString())
                        || !string.IsNullOrEmpty(contentDisposition.FileNameStar.ToString()));
         }
+
+        #endregion
     }
 }

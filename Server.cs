@@ -22,6 +22,8 @@ public sealed class Server
     //server properties
     public DateTime serverStart = DateTime.Now;
     public double requestCount = 0;
+    public double pageRequestCount = 0;
+    public double apiRequestCount = 0;
     public float requestTime = 0;
 
     //config properties
@@ -35,7 +37,7 @@ public sealed class Server
     public bool resetPass = false; //force admin to reset password
     public Dictionary<string, string> languages;
 
-    private static string _path = "";
+    public static string _path = "";
 
     //Dictionary used for caching non-serialized objects, files from disk, or raw text
     //be careful not to leak memory into the cache while causing an implosion!
@@ -47,8 +49,17 @@ public sealed class Server
     //         where data is injected in between each array item.
     public Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
 
+    public string RootPath
+    {
+        set
+        {
+            //set the root path of the server
+            _path = value;
+        }
+    }
+
     public static string MapPath(string strPath = "") {
-        if (_path == "") { _path = Path.GetFullPath(".") + "\\"; }
+        //if (_path == "") { _path = Path.GetFullPath(".") + "\\"; }
         var str = strPath.Replace("/", "\\");
         if (str.Substring(0, 1) == "\\") { str = str.Substring(1); }
         return _path + str;
