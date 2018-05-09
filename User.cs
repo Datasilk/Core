@@ -59,23 +59,6 @@ namespace Datasilk
             if (visitorId == "" || visitorId == null) {
                 visitorId = Generate.NewId();
                 changed = true;
-
-                //check for authentication cookie
-                var identity = (ClaimsIdentity)context.User.Identity;
-                if(identity != null)
-                {
-                    if(identity.IsAuthenticated == true)
-                    {
-                        userId = int.Parse(identity.FindFirst(ClaimTypes.NameIdentifier).Value);
-                        userType = short.Parse(identity.FindFirst("userType").Value);
-                        email = identity.FindFirst(ClaimTypes.Email).Value;
-                        photo = identity.FindFirst("photo").Value == "1";
-                        name = identity.FindFirst(ClaimTypes.Name).Value;
-                        displayName = identity.FindFirst("displayName").Value;
-                        datecreated = DateTime.Parse(identity.FindFirst("dateCreated").Value);
-                        visitorId = identity.FindFirst("visitorId").Value;
-                    }
-                }
             }
             VendorInit();
         }
