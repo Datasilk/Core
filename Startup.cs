@@ -41,11 +41,11 @@ namespace Datasilk
             );
 
             //add cookie expiration
-            services.AddAuthentication().AddCookie(opts =>
-            {
-                opts.Cookie.Expiration = TimeSpan.FromHours(24 * 7);
-                opts.Cookie.Name = server.nameSpace;
-            });
+            //services.AddAuthentication().AddCookie(opts =>
+            //{
+            //    opts.Cookie.Expiration = TimeSpan.FromHours(24 * 7);
+            //    opts.Cookie.Name = server.nameSpace;
+            //});
             
             //add session
             services.AddSession();
@@ -92,7 +92,7 @@ namespace Datasilk
             var expires = !string.IsNullOrEmpty(config.GetSection("Session:Expires").Value) ? int.Parse(config.GetSection("Session:Expires").Value) : 60;
 
             //use cookie authentication
-            app.UseAuthentication();
+            //app.UseAuthentication();
 
             //use session
             var sessionOpts = new SessionOptions();
