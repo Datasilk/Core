@@ -51,17 +51,22 @@ namespace Datasilk
             server.RootPath = path;
 
             //load application-wide cache
+            if (!File.Exists(Server.MapPath("config.json")))
+            {
+                //generate config file if none exists
+                Serializer.WriteObjectToFile(new Models.Config(), Server.MapPath("config.json"));
+            }
             config = new ConfigurationBuilder()
                 .AddJsonFile(Server.MapPath("config.json"))
                 .AddEnvironmentVariables().Build();
 
             server.config = config;
 
-            server.nameSpace = config.GetSection("Namespace").Value;
-            server.sqlActive = config.GetSection("Data:Active").Value;
-            server.sqlConnectionString = config.GetSection("Data:" + server.sqlActive).Value;
+            server.nameSpace = config.GetSection("assembly").Value;
+            server.sqlActive = config.GetSection("sql:Active").Value;
+            server.sqlConnectionString = config.GetSection("sql:" + server.sqlActive).Value;
 
-            switch (config.GetSection("Environment").Value.ToLower())
+            switch (config.GetSection("environment").Value.ToLower())
             {
                 case "development":
                 case "dev":
