@@ -39,13 +39,6 @@ namespace Datasilk
                     x.MultipartHeadersLengthLimit = int.MaxValue;
                 }
             );
-
-            //add cookie expiration
-            //services.AddAuthentication().AddCookie(opts =>
-            //{
-            //    opts.Cookie.Expiration = TimeSpan.FromHours(24 * 7);
-            //    opts.Cookie.Name = server.nameSpace;
-            //});
             
             //add session
             services.AddSession();
@@ -90,9 +83,6 @@ namespace Datasilk
 
             //configure cookie-based authentication
             var expires = !string.IsNullOrEmpty(config.GetSection("Session:Expires").Value) ? int.Parse(config.GetSection("Session:Expires").Value) : 60;
-
-            //use cookie authentication
-            //app.UseAuthentication();
 
             //use session
             var sessionOpts = new SessionOptions();
@@ -142,7 +132,6 @@ namespace Datasilk
 
             if (server.environment == Server.Environment.development)
             {
-                Console.WriteLine("--------------------------------------------");
                 Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
 
                 //optionally, wipe Scaffold cache to enable developer updates to html files when server is running
@@ -327,7 +316,7 @@ namespace Datasilk
                     {
                         Console.WriteLine(ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
                     }
-                    throw ex;
+                    throw ex.InnerException;
                 }
                 service.Unload();
 
@@ -371,7 +360,10 @@ namespace Datasilk
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        if (server.environment == Server.Environment.development)
+                        {
+                            Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        }
                         throw ex;
                     }
                 }
