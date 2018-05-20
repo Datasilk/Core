@@ -99,11 +99,6 @@ namespace Datasilk
             name = "";
             photo = false;
             changed = true;
-            context.Session.Remove("user");
-
-            //update authentication cookie when sign out
-            context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
             VendorLogOut();
         }
 

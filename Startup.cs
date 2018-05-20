@@ -134,6 +134,12 @@ namespace Datasilk
             var isApiCall = false;
 
             server.requestCount++;
+            if(paths[paths.Length - 1].IndexOf(".") > 0)
+            {
+                //do not process files, but instead return a 404 error
+                context.Response.StatusCode = 404;
+                return;
+            }
 
             if (server.environment == Server.Environment.development)
             {
