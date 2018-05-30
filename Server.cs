@@ -73,9 +73,9 @@ public sealed class Server
     /// <param name="noDevEnvCache">If true, it will not load a file from cache if the app is running in a development environment. Instead, it will always load the file from a drive.</param>
     /// <param name="noCache">If true, will not save to cache, but will instead load file from disk every time</param>
         /// <returns></returns>
-    public string LoadFileFromCache(string filename, bool noDevEnvCache = false, bool noCache = false)
+    public string LoadFileFromCache(string filename)
     {
-        if ((environment != Environment.development || noDevEnvCache == false) && noCache == false)
+        if (environment != Environment.development)
         {
             //next, check cache
             if (Cache.ContainsKey(filename))
@@ -87,7 +87,7 @@ public sealed class Server
         {
             //finally, check file system
             var file = File.ReadAllText(MapPath(filename));
-            if (environment != Environment.development && noCache == false)
+            if (environment != Environment.development)
             {
                 Cache.Add(filename, file);
             }

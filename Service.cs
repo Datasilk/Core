@@ -40,7 +40,7 @@ namespace Datasilk
             return "success";
         }
 
-        public string Inject(string selector, injectType injectType, string html, string javascript, string css)
+        public static string Inject(string selector, injectType injectType, string html, string javascript, string css)
         {
             var response = new Response()
             {
@@ -53,7 +53,7 @@ namespace Datasilk
             return "{\"d\":" + Serializer.WriteObjectToString(response) + "}";
         }
 
-        public string Inject(Response response)
+        public static string Inject(Response response)
         {
             return Inject(response.selector, response.type, response.html, response.javascript, response.css);
         }
