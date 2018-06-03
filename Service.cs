@@ -5,22 +5,7 @@ namespace Datasilk
 {
     public class Service : Request
     {
-        public enum injectType
-        {
-            replace = 0,
-            append = 1,
-            before = 2,
-            after = 3
-        }
-
-        public struct Response
-        {
-            public injectType type;
-            public string selector;
-            public string html;
-            public string javascript;
-            public string css;
-        }
+        
 
         public Service(HttpContext context) : base(context) { }
 
@@ -40,7 +25,7 @@ namespace Datasilk
             return "success";
         }
 
-        public static string Inject(string selector, injectType injectType, string html, string javascript, string css)
+        public static string Inject(string selector, responseType injectType, string html, string javascript, string css)
         {
             var response = new Response()
             {

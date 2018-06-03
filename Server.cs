@@ -25,6 +25,7 @@ public sealed class Server
     public double pageRequestCount = 0;
     public double apiRequestCount = 0;
     public float requestTime = 0;
+    public string Version = "0.0";
 
     //config properties
     public IConfiguration config;

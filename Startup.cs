@@ -42,7 +42,12 @@ namespace Datasilk
             
             //add session
             services.AddSession();
+
+            //allow vendor to configure services
+            ConfiguringServices(services);
         }
+
+        public virtual void ConfiguringServices(IServiceCollection services) { }
 
         public virtual void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
