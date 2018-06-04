@@ -327,7 +327,7 @@ namespace Utility.Strings
             return true;
         }
 
-        public static bool CheckChar(char character, bool allowAlpha = true, bool allowNumbers = true, char[] allowList = null, bool capitalizedOnly = false)
+        public static bool CheckChar(this char character, bool allowAlpha = true, bool allowNumbers = true, char[] allowList = null, bool capitalizedOnly = false)
         {
             if (allowAlpha == true)
             {
