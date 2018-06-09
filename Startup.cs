@@ -151,7 +151,7 @@ namespace Datasilk
                 Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
 
                 //optionally, wipe Scaffold cache to enable developer updates to html files when server is running
-                server.Scaffold = new Dictionary<string, SerializedScaffold>();
+                Server.Scaffold = new Dictionary<string, SerializedScaffold>();
             }
 
             if (paths.Length > 1 && paths[0] == "api")

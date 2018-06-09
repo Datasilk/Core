@@ -48,7 +48,7 @@ public sealed class Server
     //Value for key/value pair is an array of HTML (scaffold["key"][x].htm), 
     //         separated by scaffold variable name (scaffold["key"][x].name),
     //         where data is injected in between each array item.
-    public Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
+    public static Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
 
     public string RootPath
     {

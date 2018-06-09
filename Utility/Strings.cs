@@ -452,7 +452,7 @@ namespace Utility.Strings
             }
             else
             {
-                filepath.Split('/');
+                paths = filepath.Split('/');
             }
 
             if (paths.Length > 1)
