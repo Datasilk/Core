@@ -203,7 +203,7 @@ namespace Datasilk
                 }
 
                 //load service class from URL path
-                string className = server.nameSpace + ".Services." + paths[1];
+                string className = server.nameSpace + ".Services." + paths[1].Replace("-","").Replace(" ", "");
                 string methodName = paths[2];
                 if (paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
                 var service = routes.FromServiceRoutes(context, className);
