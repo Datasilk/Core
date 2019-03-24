@@ -67,10 +67,21 @@ namespace Datasilk
 
             server.config = config;
 
+            //configure server defaults
             server.nameSpace = config.GetSection("assembly").Value;
+            server.defaultController = config.GetSection("defaultController").Value;
+            server.defaultServiceMethod = config.GetSection("defaultServiceMethod").Value;
+            var servicepaths = config.GetSection("servicePaths").Value;
+            if(servicepaths != "")
+            {
+                server.servicePaths = servicepaths.Replace(" ", "").Split(',');
+            }
+
+            //configure server database connection strings
             server.sqlActive = config.GetSection("sql:Active").Value;
             server.sqlConnectionString = config.GetSection("sql:" + server.sqlActive).Value;
 
+            //configure server environment
             switch (config.GetSection("environment").Value.ToLower())
             {
                 case "development":
@@ -90,6 +101,9 @@ namespace Datasilk
             //configure server security
             server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
             server.salt = config.GetSection("Encryption:salt").Value;
+
+            //configure server Scaffold cache
+            ScaffoldCache.cache = Server.Scaffold;
 
             //configure cookie-based authentication
             var expires = !string.IsNullOrEmpty(config.GetSection("Session:Expires").Value) ? int.Parse(config.GetSection("Session:Expires").Value) : 60;
@@ -154,7 +168,7 @@ namespace Datasilk
                 Server.Scaffold = new Dictionary<string, SerializedScaffold>();
             }
 
-            if (paths.Length > 1 && paths[0] == "api")
+            if (paths.Length > 1 && server.servicePaths.Contains(paths[0]) == true)
             {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 //run a web service via ajax (e.g. /api/namespace/class/function) //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,15 +217,16 @@ namespace Datasilk
                 }
 
                 //load service class from URL path
+                context.Response.StatusCode = 200;
                 string className = server.nameSpace + ".Services." + paths[1].Replace("-","").Replace(" ", "");
-                string methodName = paths[2];
+                string methodName = paths.Length > 2 ? paths[2] : server.defaultServiceMethod;
                 if (paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
                 var service = routes.FromServiceRoutes(context, className);
                 if (service == null)
                 {
                     try
                     {
-                        service = (Service)Activator.CreateInstance(Type.GetType(className), new object[] { context });
+                        service = (Web.Service)Activator.CreateInstance(Type.GetType(className), new object[] { context });
                     }
                     catch (Exception) { }
                 }
@@ -219,14 +234,15 @@ namespace Datasilk
                 //check if service class was found
                 if (service == null)
                 {
-                    context.Response.ContentType = "text/html";
-                    context.Response.StatusCode = 500;
-                    await context.Response.WriteAsync("no service found");
-                    return;
+                    throw new Exception("no service found");
                 }
 
                 //execute method from new Service instance
                 Type type = Type.GetType(className);
+                if (type == null)
+                {
+                    throw new Exception("type " + className + " does not exist");
+                }
                 MethodInfo method = type.GetMethod(methodName);
 
                 //try to cast params to correct types
@@ -321,7 +337,6 @@ namespace Datasilk
                 }
 
                 object result = null;
-
                 try
                 {
                     result = method.Invoke(service, paramVals);
@@ -334,18 +349,23 @@ namespace Datasilk
                     }
                     throw ex.InnerException;
                 }
-                service.Unload();
+                if(context.Response.StatusCode == 200) {
+                    //finally, unload the service
+                    service.Unload();
 
-                //finally, unload the Datasilk Core:
-                //close SQL connection, save User info, etc (before sending response)
-                context.Response.ContentType = "text/json";
-                if (result != null)
-                {
-                    await context.Response.WriteAsync((string)result);
-                }
-                else
-                {
-                    await context.Response.WriteAsync("{\"error\":\"no content returned\"}");
+                    //set content response as JSON
+                    if(context.Response.ContentType == null)
+                    {
+                        context.Response.ContentType = "text/json";
+                    }
+                    if (result != null)
+                    {
+                        await context.Response.WriteAsync((string)result);
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsync("{}");
+                    }
                 }
             }
             else
@@ -355,16 +375,21 @@ namespace Datasilk
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 server.pageRequestCount++;
 
-                //create instance of Page class based on request URL path
+                //create instance of Controller class based on request URL path
                 var html = "";
                 var newpaths = path.Split('?', 2)[0].Split('/');
-                var page = routes.FromPageRoutes(context, newpaths[0].ToLower());
+                var page = routes.FromControllerRoutes(context, newpaths[0].ToLower());
 
                 if (page == null)
                 {
                     //page is not part of any known routes, try getting page class manually
-                    Type type = Type.GetType((server.nameSpace + ".Pages." + (newpaths[0] == "" ? "Login" : newpaths[0].Capitalize().Replace("-", " ")).Replace(" ", "")));
-                    page = (Page)Activator.CreateInstance(type, new object[] { context });
+                    var typeName = (server.nameSpace + ".Controllers." + (newpaths[0] == "" ? server.defaultController : newpaths[0].Capitalize().Replace("-", " ")).Replace(" ", ""));
+                    Type type = Type.GetType(typeName);
+                    if(type == null)
+                    {
+                        throw new Exception("type " + typeName + " does not exist");
+                    }
+                    page = (Mvc.Controller)Activator.CreateInstance(type, new object[] { context });
                 }
 
                 if (page != null)
@@ -386,7 +411,7 @@ namespace Datasilk
                 else
                 {
                     //show 404 error
-                    page = new Page(context);
+                    page = new Mvc.Controller(context);
                     html = page.Error404();
                 }
 
@@ -404,7 +429,7 @@ namespace Datasilk
                 requestEnd = DateTime.Now;
                 tspan = requestEnd - requestStart;
                 server.requestTime += (tspan.Seconds);
-                Console.WriteLine("END REQUEST {0} ms, {1} {2}", tspan.Milliseconds, path, isApiCall ? "Web API" : "Page");
+                Console.WriteLine("END REQUEST {0} ms, {1} {2}", tspan.Milliseconds, path, isApiCall ? "Service" : "Controller");
                 Console.WriteLine("");
             }
         }

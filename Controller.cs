@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Http;
 
-namespace Datasilk
+namespace Datasilk.Mvc
 {
-    public class Page: Request
+    public class Controller: Web.Request
     {
 
         public string title = "Datasilk";
@@ -13,7 +13,7 @@ namespace Datasilk
         public StringBuilder scripts = new StringBuilder();
         public StringBuilder headCss = new StringBuilder();
 
-        public Page(HttpContext context) : base(context){}
+        public Controller(HttpContext context) : base(context){}
 
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {
@@ -31,7 +31,7 @@ namespace Datasilk
             return scaffold.Render();
         }
 
-        protected virtual string AccessDenied(bool htmlOutput = true, Page login = null)
+        protected virtual string AccessDenied(bool htmlOutput = true, Controller login = null)
         {
             if (htmlOutput == true)
             {

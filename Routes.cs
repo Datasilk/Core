@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Datasilk
+namespace Datasilk.Web
 {
     public class Routes
     {
-        public virtual Page FromPageRoutes(HttpContext context, string name)
+        public virtual Mvc.Controller FromControllerRoutes(HttpContext context, string name)
         {
             return null;
         }

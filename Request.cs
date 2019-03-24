@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 
-namespace Datasilk
+namespace Datasilk.Web
 {
     public class Request
     {

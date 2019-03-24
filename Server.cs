@@ -30,6 +30,9 @@ public sealed class Server
     //config properties
     public IConfiguration config;
     public string nameSpace = "";
+    public string defaultController = "Home";
+    public string defaultServiceMethod = "Index";
+    public string[] servicePaths = new string[] { "api" };
     public string sqlActive = "";
     public string sqlConnectionString = "";
     public int bcrypt_workfactor = 10;

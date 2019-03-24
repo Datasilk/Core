@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Utility.Serialization;
 
-namespace Datasilk
+namespace Datasilk.Web
 {
     public class Service : Request
     {
@@ -9,14 +9,17 @@ namespace Datasilk
 
         public Service(HttpContext context) : base(context) { }
 
-        public string AccessDenied()
+        public string AccessDenied(string message = "access denied")
         {
-            return "access denied";
+            context.Response.StatusCode = 403;
+            context.Response.WriteAsync(message);
+            return message;
         }
 
         public string Error(string message)
         {
             context.Response.StatusCode = 500;
+            context.Response.WriteAsync(message);
             return message;
         }
 
@@ -24,6 +27,8 @@ namespace Datasilk
         {
             return "success";
         }
+
+        public string Empty() { return "{}"; }
 
         public static string Inject(string selector, responseType injectType, string html, string javascript, string css)
         {

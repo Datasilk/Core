@@ -6,7 +6,7 @@ namespace Datasilk.Models
     {
         public string assembly = "";
         public string environment = "development";
-        public string port = "7000";
+        public string defaultController = "Home";
         public ConfigSections.Sql sql = new ConfigSections.Sql();
         public ConfigSections.Encryption encryption = new ConfigSections.Encryption();
 
@@ -25,7 +25,7 @@ namespace Datasilk.Models.ConfigSections
     public class Sql
     {
         public string active = "SqlServerTrusted";
-        public string SqlServerTrusted = "server=.\\SQL2017; database=Saber; Trusted_Connection=true";
+        public string SqlServerTrusted = "server=.\\SQL2017; database=YOUR_DATABASE_NAME; Trusted_Connection=true";
     }
 
     public class Encryption
