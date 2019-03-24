@@ -7,7 +7,6 @@ namespace Datasilk.Web
     public class Request
     {
         protected HttpContext context;
-        protected Server Server { get; } = Server.Instance;
 
         public Request(HttpContext context) { this.context = context; }
 

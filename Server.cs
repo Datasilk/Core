@@ -4,11 +4,8 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Utility.Serialization;
 
-public sealed class Server
+public static class Server
 {
-    //create Server instance as singleton
-    private Server() { }
-    public static Server Instance { get; } = new Server();
 
     //environment
     public enum Environment
@@ -17,43 +14,36 @@ public sealed class Server
         staging = 1,
         production = 2
     }
-    public Environment environment = Environment.development;
+    public static Environment environment = Environment.development;
 
     //server properties
-    public DateTime serverStart = DateTime.Now;
-    public double requestCount = 0;
-    public double pageRequestCount = 0;
-    public double apiRequestCount = 0;
-    public float requestTime = 0;
-    public string Version = "0.0";
+    public static DateTime serverStart = DateTime.Now;
+    public static double requestCount = 0;
+    public static double pageRequestCount = 0;
+    public static double apiRequestCount = 0;
+    public static float requestTime = 0;
+    public static string Version = "0.0";
 
     //config properties
-    public IConfiguration config;
-    public string nameSpace = "";
-    public string defaultController = "Home";
-    public string defaultServiceMethod = "Index";
-    public string[] servicePaths = new string[] { "api" };
-    public string sqlActive = "";
-    public string sqlConnectionString = "";
-    public int bcrypt_workfactor = 10;
-    public string salt = "";
-    public bool hasAdmin = false; //no admin account exists
-    public bool resetPass = false; //force admin to reset password
-    public Dictionary<string, string> languages;
+    public static IConfiguration config;
+    public static string nameSpace = "";
+    public static string defaultController = "Home";
+    public static string defaultServiceMethod = "Index";
+    public static string[] servicePaths = new string[] { "api" };
+    public static string sqlActive = "";
+    public static string sqlConnectionString = "";
+    public static int bcrypt_workfactor = 10;
+    public static string salt = "";
+    public static bool hasAdmin = false; //no admin account exists
+    public static bool resetPass = false; //force admin to reset password
+    public static Dictionary<string, string> languages;
 
-    public static string _path = "";
+    private static string _path = "";
 
     //Dictionary used for caching non-serialized objects, files from disk, or raw text
-    //be careful not to leak memory into the cache while causing an implosion!
-    public Dictionary<string, object> Cache = new Dictionary<string, object>();
+    public static Dictionary<string, object> Cache = new Dictionary<string, object>();
 
-    //Dictionary used for HTML scaffolding of various files on the Server. 
-    //Value for key/value pair is an array of HTML (scaffold["key"][x].htm), 
-    //         separated by scaffold variable name (scaffold["key"][x].name),
-    //         where data is injected in between each array item.
-    public static Dictionary<string, SerializedScaffold> Scaffold = new Dictionary<string, SerializedScaffold>();
-
-    public string RootPath
+    public static string RootPath
     {
         set
         {
@@ -63,7 +53,6 @@ public sealed class Server
     }
 
     public static string MapPath(string strPath = "") {
-        //if (_path == "") { _path = Path.GetFullPath(".") + "\\"; }
         var str = strPath.Replace("/", "\\");
         if (str.Substring(0, 1) == "\\") { str = str.Substring(1); }
         return _path + str;
@@ -77,7 +66,7 @@ public sealed class Server
     /// <param name="noDevEnvCache">If true, it will not load a file from cache if the app is running in a development environment. Instead, it will always load the file from a drive.</param>
     /// <param name="noCache">If true, will not save to cache, but will instead load file from disk every time</param>
         /// <returns></returns>
-    public string LoadFileFromCache(string filename)
+    public static string LoadFileFromCache(string filename)
     {
         if (environment != Environment.development)
         {
@@ -100,7 +89,7 @@ public sealed class Server
         return "";
     }
 
-    public void SaveFileFromCache(string filename, string value)
+    public static void SaveFileFromCache(string filename, string value)
     {
         File.WriteAllText(MapPath(filename), value);
         if (Cache.ContainsKey(filename))
@@ -113,7 +102,7 @@ public sealed class Server
         }
     }
 
-    public void SaveToCache(string key, object value)
+    public static void SaveToCache(string key, object value)
     {
         if (Cache.ContainsKey(key))
         {
@@ -125,7 +114,7 @@ public sealed class Server
         }
     }
 
-    public T LoadFromCache<T>(string key, Func<T> value, bool serialize = true)
+    public static T LoadFromCache<T>(string key, Func<T> value, bool serialize = true)
     {
         if(Cache[key] == null)
         {

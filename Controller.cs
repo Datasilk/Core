@@ -18,7 +18,7 @@ namespace Datasilk.Mvc
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {
             //renders HTML layout
-            var scaffold = new Scaffold("/Views/Shared/layout.html", Server.Scaffold);
+            var scaffold = new Scaffold("/Views/Shared/layout.html");
             scaffold.Data["title"] = title;
             scaffold.Data["description"] = description;
             scaffold.Data["head-css"] = headCss.ToString();
@@ -39,7 +39,7 @@ namespace Datasilk.Mvc
                 {
                     return login.Render(new string[] { });
                 }
-                var scaffold = new Scaffold("/Views/access-denied.html", Server.Scaffold);
+                var scaffold = new Scaffold("/Views/access-denied.html");
                 return scaffold.Render();
             }
             return "Access Denied";

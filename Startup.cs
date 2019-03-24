@@ -21,13 +21,12 @@ namespace Datasilk
 {
     public class Startup
     {
-        protected Server server = Server.Instance;
         protected static IConfigurationRoot config;
         protected global::Routes routes = new global::Routes();
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
-            //set up server-side memory cache
+            //set up Server-side memory cache
             services.AddDistributedMemoryCache();
             services.AddMemoryCache();
 
@@ -51,9 +50,9 @@ namespace Datasilk
 
         public virtual void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            //set root server path
+            //set root Server path
             var path = env.WebRootPath.Replace("wwwroot", "");
-            server.RootPath = path;
+            Server.RootPath = path;
 
             //load application-wide cache
             if (!File.Exists(Server.MapPath("config.json")))
@@ -65,52 +64,52 @@ namespace Datasilk
                 .AddJsonFile(Server.MapPath("config.json"))
                 .AddEnvironmentVariables().Build();
 
-            server.config = config;
+            Server.config = config;
 
-            //configure server defaults
-            server.nameSpace = config.GetSection("assembly").Value;
-            server.defaultController = config.GetSection("defaultController").Value;
-            server.defaultServiceMethod = config.GetSection("defaultServiceMethod").Value;
+            //configure Server defaults
+            Server.nameSpace = config.GetSection("assembly").Value;
+            Server.defaultController = config.GetSection("defaultController").Value;
+            Server.defaultServiceMethod = config.GetSection("defaultServiceMethod").Value;
             var servicepaths = config.GetSection("servicePaths").Value;
             if(servicepaths != "")
             {
-                server.servicePaths = servicepaths.Replace(" ", "").Split(',');
+                Server.servicePaths = servicepaths.Replace(" ", "").Split(',');
             }
 
-            //configure server database connection strings
-            server.sqlActive = config.GetSection("sql:Active").Value;
-            server.sqlConnectionString = config.GetSection("sql:" + server.sqlActive).Value;
+            //configure Server database connection strings
+            Server.sqlActive = config.GetSection("sql:Active").Value;
+            Server.sqlConnectionString = config.GetSection("sql:" + Server.sqlActive).Value;
 
-            //configure server environment
+            //configure Server environment
             switch (config.GetSection("environment").Value.ToLower())
             {
                 case "development":
                 case "dev":
-                    server.environment = Server.Environment.development;
+                    Server.environment = Server.Environment.development;
                     break;
                 case "staging":
                 case "stage":
-                    server.environment = Server.Environment.staging;
+                    Server.environment = Server.Environment.staging;
                     break;
                 case "production":
                 case "prod":
-                    server.environment = Server.Environment.production;
+                    Server.environment = Server.Environment.production;
                     break;
             }
 
-            //configure server security
-            server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
-            server.salt = config.GetSection("Encryption:salt").Value;
+            //configure Server security
+            Server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
+            Server.salt = config.GetSection("Encryption:salt").Value;
 
-            //configure server Scaffold cache
-            ScaffoldCache.cache = Server.Scaffold;
+            //configure Server Scaffold cache
+            ScaffoldCache.cache = new Dictionary<string, SerializedScaffold>();
 
             //configure cookie-based authentication
             var expires = !string.IsNullOrEmpty(config.GetSection("Session:Expires").Value) ? int.Parse(config.GetSection("Session:Expires").Value) : 60;
 
             //use session
             var sessionOpts = new SessionOptions();
-            sessionOpts.Cookie.Name = server.nameSpace;
+            sessionOpts.Cookie.Name = Server.nameSpace;
             sessionOpts.IdleTimeout = TimeSpan.FromMinutes(expires);
 
             app.UseSession(sessionOpts);
@@ -133,7 +132,7 @@ namespace Datasilk
             };
             app.UseDeveloperExceptionPage();
 
-            //server if finished configuring
+            //Server if finished configuring
             Configured(app, env, config);
 
             //run Datasilk application
@@ -152,7 +151,7 @@ namespace Datasilk
             var paths = path.Split('/').ToArray();
             var isApiCall = false;
 
-            server.requestCount++;
+            Server.requestCount++;
             if(paths[paths.Length - 1].IndexOf(".") > 0)
             {
                 //do not process files, but instead return a 404 error
@@ -160,22 +159,22 @@ namespace Datasilk
                 return;
             }
 
-            if (server.environment == Server.Environment.development)
+            if (Server.environment == Server.Environment.development)
             {
                 Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
 
-                //optionally, wipe Scaffold cache to enable developer updates to html files when server is running
-                Server.Scaffold = new Dictionary<string, SerializedScaffold>();
+                //optionally, wipe Scaffold cache to enable developer updates to html files when Server is running
+                ScaffoldCache.cache = new Dictionary<string, SerializedScaffold>();
             }
 
-            if (paths.Length > 1 && server.servicePaths.Contains(paths[0]) == true)
+            if (paths.Length > 1 && Server.servicePaths.Contains(paths[0]) == true)
             {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 //run a web service via ajax (e.g. /api/namespace/class/function) //////////////////////////////////////////////////////////////////////////////////////////////////////
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 //execute web service
-                server.apiRequestCount++;
+                Server.apiRequestCount++;
                 isApiCall = true;
 
                 //get parameters from request body, including page id
@@ -207,20 +206,42 @@ namespace Datasilk
                         }
                     }
                 }
-                else
+
+                //get method parameters from query string
+                foreach (var key in context.Request.Query.Keys)
                 {
-                    //get method parameters from query string
-                    foreach (var key in context.Request.Query.Keys)
-                    {
+                    if (!param.Contains(key.ToLower())) {
                         parms.Add(key.ToLower(), context.Request.Query[key].ToString());
                     }
                 }
 
                 //load service class from URL path
                 context.Response.StatusCode = 200;
-                string className = server.nameSpace + ".Services." + paths[1].Replace("-","").Replace(" ", "");
-                string methodName = paths.Length > 2 ? paths[2] : server.defaultServiceMethod;
-                if (paths.Length == 4) { className += "." + paths[2]; methodName = paths[3]; }
+                string className = Server.nameSpace + ".Services." + paths[1].Replace("-","").ReplaceOnlyAlphaNumeric(true, true, false);
+                string methodName = paths.Length > 2 ? paths[2] : Server.defaultServiceMethod;
+                if (paths.Length >= 4) {
+                    //path also contains extra namespace path(s)
+                    for(var x = 2; x < paths.Length - 1; x++)
+                    {
+                        //add extra namespaces
+                        className += "." + paths[x].Replace("-", "").ReplaceOnlyAlphaNumeric(true, true, false);
+                    }
+                    //get method name at end of path
+                    methodName = paths[paths.Length - 1].Replace("-", "").ReplaceOnlyAlphaNumeric(true, true, false);
+                }
+
+                //get service type
+                Type type = Type.GetType(className);
+
+                //check if service class was found
+                if (type == null)
+                {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("service does not exist");
+                    return;
+                }
+
+                //get instance of service class
                 var service = routes.FromServiceRoutes(context, className);
                 if (service == null)
                 {
@@ -231,19 +252,17 @@ namespace Datasilk
                     catch (Exception) { }
                 }
 
-                //check if service class was found
-                if (service == null)
-                {
-                    throw new Exception("no service found");
-                }
 
-                //execute method from new Service instance
-                Type type = Type.GetType(className);
-                if (type == null)
-                {
-                    throw new Exception("type " + className + " does not exist");
-                }
+                //get class method from service type
                 MethodInfo method = type.GetMethod(methodName);
+
+                //check if method exists
+                if (method == null)
+                {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("service method " + methodName + " does not exist");
+                    return;
+                }
 
                 //try to cast params to correct types
                 ParameterInfo[] methodParams = method.GetParameters();
@@ -253,9 +272,12 @@ namespace Datasilk
                 {
                     //find correct key/value pair
                     param = "";
+                    var methodParamName = methodParams[x].Name.ToLower();
+                    var paramType = methodParams[x].ParameterType;
+
                     foreach (var item in parms)
                     {
-                        if (item.Key == methodParams[x].Name.ToLower())
+                        if (item.Key == methodParamName)
                         {
                             param = item.Value;
                             break;
@@ -265,32 +287,32 @@ namespace Datasilk
                     if (param == "")
                     {
                         //set default value for empty parameter
-                        var t = methodParams[x].ParameterType;
-                        if (t == typeof(Int32))
+                        if (paramType == typeof(Int32))
                         {
                             param = "0";
                         }
                     }
 
                     //cast params to correct (supported) types
-                    if (methodParams[x].ParameterType.Name != "String")
+                    if (paramType.Name != "String")
                     {
                         if (int.TryParse(param, out int i) == true)
                         {
-                            if (methodParams[x].ParameterType.IsEnum == true)
+                            if (paramType.IsEnum == true)
                             {
-                                //enum
-                                paramVals[x] = Enum.Parse(methodParams[x].ParameterType, param);
+                                //convert param value to enum
+                                paramVals[x] = Enum.Parse(paramType, param);
                             }
                             else
                             {
-                                //int
-                                paramVals[x] = Convert.ChangeType(i, methodParams[x].ParameterType);
+                                //convert param value to matching method parameter number type
+                                paramVals[x] = Convert.ChangeType(i, paramType);
                             }
 
                         }
-                        else if (methodParams[x].ParameterType.FullName.Contains("DateTime"))
+                        else if (paramType.FullName.Contains("DateTime"))
                         {
+                            //convert param value to DateTime
                             if (param == "")
                             {
                                 paramVals[x] = null;
@@ -304,32 +326,37 @@ namespace Datasilk
                                 catch (Exception) { }
                             }
                         }
-                        else if (methodParams[x].ParameterType.IsArray)
+                        else if (paramType.IsArray)
                         {
+                            //convert param value to array (of T)
                             var arr = param.Replace("[", "").Replace("]", "").Replace("\r", "").Replace("\n", "").Split(",").Select(a => { return a.Trim(); }).ToList();
-                            if (methodParams[x].ParameterType.FullName == "System.Int32[]")
+                            if (paramType.FullName == "System.Int32[]")
                             {
+                                //convert param values to int array
                                 paramVals[x] = arr.Select(a => { return int.Parse(a); }).ToArray();
                             }
                             else
                             {
-                                paramVals[x] = Convert.ChangeType(arr, methodParams[x].ParameterType);
+                                //convert param values to array (of matching method parameter type)
+                                paramVals[x] = Convert.ChangeType(arr, paramType);
                             }
 
 
                         }
-                        else if (methodParams[x].ParameterType.Name.IndexOf("Dictionary") == 0)
+                        else if (paramType.Name.IndexOf("Dictionary") == 0)
                         {
+                            //convert param value (JSON) to Dictionary
                             paramVals[x] = (Dictionary<string, string>)Serializer.ReadObject(param, typeof(Dictionary<string, string>));
                         }
                         else
                         {
-                            paramVals[x] = Convert.ChangeType(param, methodParams[x].ParameterType);
+                            //convert param value to matching method parameter type
+                            paramVals[x] = Convert.ChangeType(param, paramType);
                         }
                     }
                     else
                     {
-                        //string
+                        //matching method parameter type is string
                         paramVals[x] = param;
                     }
 
@@ -339,23 +366,19 @@ namespace Datasilk
                 object result = null;
                 try
                 {
+                    //execute service method
                     result = method.Invoke(service, paramVals);
                 }
                 catch (Exception ex)
                 {
-                    if (server.environment == Server.Environment.development)
-                    {
-                        Console.WriteLine(ex.InnerException.Message + "\n" + ex.InnerException.StackTrace);
-                    }
                     throw ex.InnerException;
                 }
                 if(context.Response.StatusCode == 200) {
-                    //finally, unload the service
-                    service.Unload();
+                    //only write response if there were no errors
 
-                    //set content response as JSON
                     if(context.Response.ContentType == null)
                     {
+                        //set content response as JSON
                         context.Response.ContentType = "text/json";
                     }
                     if (result != null)
@@ -366,6 +389,7 @@ namespace Datasilk
                     {
                         await context.Response.WriteAsync("{}");
                     }
+                    service.Unload();
                 }
             }
             else
@@ -373,7 +397,7 @@ namespace Datasilk
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 //page request (initialize client-side application) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                server.pageRequestCount++;
+                Server.pageRequestCount++;
 
                 //create instance of Controller class based on request URL path
                 var html = "";
@@ -383,7 +407,7 @@ namespace Datasilk
                 if (page == null)
                 {
                     //page is not part of any known routes, try getting page class manually
-                    var typeName = (server.nameSpace + ".Controllers." + (newpaths[0] == "" ? server.defaultController : newpaths[0].Capitalize().Replace("-", " ")).Replace(" ", ""));
+                    var typeName = (Server.nameSpace + ".Controllers." + (newpaths[0] == "" ? Server.defaultController : newpaths[0].Capitalize().Replace("-", " ")).Replace(" ", ""));
                     Type type = Type.GetType(typeName);
                     if(type == null)
                     {
@@ -401,7 +425,7 @@ namespace Datasilk
                     }
                     catch (Exception ex)
                     {
-                        if (server.environment == Server.Environment.development)
+                        if (Server.environment == Server.Environment.development)
                         {
                             Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
                         }
@@ -424,11 +448,11 @@ namespace Datasilk
                 await context.Response.WriteAsync(html);
             }
 
-            if (server.environment == Server.Environment.development)
+            if (Server.environment == Server.Environment.development)
             {
                 requestEnd = DateTime.Now;
                 tspan = requestEnd - requestStart;
-                server.requestTime += (tspan.Seconds);
+                Server.requestTime += (tspan.Seconds);
                 Console.WriteLine("END REQUEST {0} ms, {1} {2}", tspan.Milliseconds, path, isApiCall ? "Service" : "Controller");
                 Console.WriteLine("");
             }
