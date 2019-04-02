@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Utility.Serialization;
 
@@ -6,6 +7,8 @@ namespace Datasilk.Web
     public class Service : Request
     {
         
+
+        public Service(HttpContext context, Dictionary<string, string> query) : base(context) { }
 
         public Service(HttpContext context) : base(context) { }
 

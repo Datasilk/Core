@@ -16,6 +16,7 @@ using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Utility.Serialization;
 using Utility.Strings;
+using Utility.Web;
 
 namespace Datasilk
 {
@@ -178,42 +179,9 @@ namespace Datasilk
                 isApiCall = true;
 
                 //get parameters from request body, including page id
-                var parms = new Dictionary<string, string>();
+                var parms = HeaderParameters.GetParameters(context);
                 object[] paramVals;
                 var param = "";
-                string data = "";
-                if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
-                {
-                    //get POST data from request
-                    byte[] bytes = new byte[0];
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        context.Request.Body.CopyTo(ms);
-                        bytes = ms.ToArray();
-                    }
-                    data = Encoding.UTF8.GetString(bytes, 0, bytes.Length).Trim();
-                }
-
-                if (data.Length > 0)
-                {
-                    if (data.IndexOf("Content-Disposition") < 0 && data.IndexOf("{") >= 0 && data.IndexOf("}") > 0 && data.IndexOf(":") > 0)
-                    {
-                        //get method parameters from POST S.ajax.post()
-                        Dictionary<string, object> attr = JsonConvert.DeserializeObject<Dictionary<string, object>>(data);
-                        foreach (KeyValuePair<string, object> item in attr)
-                        {
-                            parms.Add(item.Key.ToLower(), item.Value.ToString());
-                        }
-                    }
-                }
-
-                //get method parameters from query string
-                foreach (var key in context.Request.Query.Keys)
-                {
-                    if (!param.Contains(key.ToLower())) {
-                        parms.Add(key.ToLower(), context.Request.Query[key].ToString());
-                    }
-                }
 
                 //load service class from URL path
                 context.Response.StatusCode = 200;
@@ -247,9 +215,16 @@ namespace Datasilk
                 {
                     try
                     {
-                        service = (Web.Service)Activator.CreateInstance(Type.GetType(className), new object[] { context });
+                        service = (Web.Service)Activator.CreateInstance(Type.GetType(className), new object[] { context, parms });
                     }
-                    catch (Exception) { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        context.Response.StatusCode = 400;
+                        await context.Response.WriteAsync("service error");
+                        return;
+                    }
+
                 }
 
 
@@ -363,11 +338,11 @@ namespace Datasilk
 
                 }
 
-                object result = null;
+                string result = null;
                 try
                 {
                     //execute service method
-                    result = method.Invoke(service, paramVals);
+                    result = (string)method.Invoke(service, paramVals);
                 }
                 catch (Exception ex)
                 {
@@ -381,9 +356,10 @@ namespace Datasilk
                         //set content response as JSON
                         context.Response.ContentType = "text/json";
                     }
+                    context.Response.ContentLength = result.Length;
                     if (result != null)
                     {
-                        await context.Response.WriteAsync((string)result);
+                        await context.Response.WriteAsync(result);
                     }
                     else
                     {
