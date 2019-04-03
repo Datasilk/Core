@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using Microsoft.AspNetCore.Http;
 
 namespace Datasilk.Mvc
@@ -13,7 +14,7 @@ namespace Datasilk.Mvc
         public StringBuilder scripts = new StringBuilder();
         public StringBuilder headCss = new StringBuilder();
 
-        public Controller(HttpContext context) : base(context){}
+        public Controller(HttpContext context, Parameters parameters) : base(context, parameters){}
 
         public virtual string Render(string[] path, string body = "", object metadata = null)
         {

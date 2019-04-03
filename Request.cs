@@ -7,8 +7,12 @@ namespace Datasilk.Web
     public class Request
     {
         protected HttpContext context;
+        protected Parameters parameters;
 
-        public Request(HttpContext context) { this.context = context; }
+        public Request(HttpContext context, Parameters parameters) {
+            this.context = context;
+            this.parameters = parameters;
+        }
 
         private User user;
         public User User

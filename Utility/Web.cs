@@ -8,9 +8,9 @@ namespace Utility.Web
 {
     public static class HeaderParameters
     {
-        public static Dictionary<string, string> GetParameters(HttpContext context)
+        public static Parameters GetParameters(HttpContext context)
         {
-            var parms = new Dictionary<string, string>();
+            var parms = new Parameters();
             var param = "";
             string data = "";
             if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)

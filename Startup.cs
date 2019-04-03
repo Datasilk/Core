@@ -168,6 +168,9 @@ namespace Datasilk
                 ScaffoldCache.cache = new Dictionary<string, SerializedScaffold>();
             }
 
+            //get parameters from request body
+            var parameters = HeaderParameters.GetParameters(context);
+
             if (paths.Length > 1 && Server.servicePaths.Contains(paths[0]) == true)
             {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,8 +181,6 @@ namespace Datasilk
                 Server.apiRequestCount++;
                 isApiCall = true;
 
-                //get parameters from request body, including page id
-                var parms = HeaderParameters.GetParameters(context);
                 object[] paramVals;
                 var param = "";
 
@@ -210,12 +211,12 @@ namespace Datasilk
                 }
 
                 //get instance of service class
-                var service = routes.FromServiceRoutes(context, className);
+                var service = routes.FromServiceRoutes(context, parameters, className);
                 if (service == null)
                 {
                     try
                     {
-                        service = (Web.Service)Activator.CreateInstance(Type.GetType(className), new object[] { context, parms });
+                        service = (Web.Service)Activator.CreateInstance(Type.GetType(className), new object[] { context, parameters });
                     }
                     catch (Exception ex)
                     {
@@ -250,7 +251,7 @@ namespace Datasilk
                     var methodParamName = methodParams[x].Name.ToLower();
                     var paramType = methodParams[x].ParameterType;
 
-                    foreach (var item in parms)
+                    foreach (var item in parameters)
                     {
                         if (item.Key == methodParamName)
                         {
@@ -378,7 +379,7 @@ namespace Datasilk
                 //create instance of Controller class based on request URL path
                 var html = "";
                 var newpaths = path.Split('?', 2)[0].Split('/');
-                var page = routes.FromControllerRoutes(context, newpaths[0].ToLower());
+                var page = routes.FromControllerRoutes(context, parameters, newpaths[0].ToLower());
 
                 if (page == null)
                 {
@@ -389,7 +390,7 @@ namespace Datasilk
                     {
                         throw new Exception("type " + typeName + " does not exist");
                     }
-                    page = (Mvc.Controller)Activator.CreateInstance(type, new object[] { context });
+                    page = (Mvc.Controller)Activator.CreateInstance(type, new object[] { context, parameters });
                 }
 
                 if (page != null)
@@ -411,7 +412,7 @@ namespace Datasilk
                 else
                 {
                     //show 404 error
-                    page = new Mvc.Controller(context);
+                    page = new Mvc.Controller(context, parameters);
                     html = page.Error404();
                 }
 
