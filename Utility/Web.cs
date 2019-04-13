@@ -41,9 +41,9 @@ namespace Utility.Web
             //get method parameters from query string
             foreach (var key in context.Request.Query.Keys)
             {
-                if (!param.Contains(key.ToLower()))
+                if (!param.Contains(key))
                 {
-                    parms.Add(key.ToLower(), context.Request.Query[key].ToString());
+                    parms.Add(key, context.Request.Query[key].ToString());
                 }
             }
             return parms;
