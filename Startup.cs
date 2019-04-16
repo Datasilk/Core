@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
@@ -13,7 +12,6 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
 using Utility.Serialization;
 using Utility.Strings;
 using Utility.Web;
