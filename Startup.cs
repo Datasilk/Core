@@ -70,7 +70,7 @@ namespace Datasilk
             Server.defaultController = config.GetSection("defaultController").Value;
             Server.defaultServiceMethod = config.GetSection("defaultServiceMethod").Value;
             var servicepaths = config.GetSection("servicePaths").Value;
-            if(servicepaths != "")
+            if (servicepaths != null && servicepaths != "")
             {
                 Server.servicePaths = servicepaths.Replace(" ", "").Split(',');
             }
