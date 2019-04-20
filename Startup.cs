@@ -209,7 +209,7 @@ namespace Datasilk
                 }
 
                 //get instance of service class
-                var service = routes.FromServiceRoutes(context, parameters, className);
+                var service = routes.FromServiceRoutes(context, parameters, className.ToLower());
                 if (service == null)
                 {
                     try
