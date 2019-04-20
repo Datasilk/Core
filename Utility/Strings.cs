@@ -58,12 +58,12 @@ namespace Utility.Strings
         #region "Manipulation"
         public static string Right(this string str, int len)
         {
-            return str.Substring(0, str.Length - 1 - len);
+            return str.Substring(str.Length - len);
         }
 
         public static string Left(this string str, int len)
         {
-            return str.Substring(0 + len);
+            return str.Substring(0, len);
         }
 
         public static string ReplaceAll(this string myStr, string replaceWith, params string[] findList)
