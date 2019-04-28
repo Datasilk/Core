@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using System.Text;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 
@@ -8,6 +10,9 @@ namespace Datasilk.Web
     {
         protected HttpContext context;
         protected Parameters parameters;
+        public StringBuilder scripts = new StringBuilder();
+        public StringBuilder css = new StringBuilder();
+        private List<string> _exists = new List<string>();
 
         public Request(HttpContext context, Parameters parameters) {
             this.context = context;
@@ -60,6 +65,17 @@ namespace Datasilk.Web
         {
             context.Response.StatusCode = 404;
             return Server.LoadFileFromCache("/Views/404.html");
+        }
+
+        public virtual void AddScript(string url, string id = "", string callback = "") { }
+
+        public virtual void AddCSS(string url, string id = "") { }
+
+        public bool ResourceAdded(string url)
+        {
+            if (_exists.Contains(url)) { return true; }
+            _exists.Add(url);
+            return false;
         }
     }
 }

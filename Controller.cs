@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace Datasilk.Mvc
 {
@@ -11,8 +9,6 @@ namespace Datasilk.Mvc
         public string description = "";
         public string favicon = "/images/favicon.png";
         public bool useTapestry = true;
-        public StringBuilder scripts = new StringBuilder();
-        public StringBuilder headCss = new StringBuilder();
 
         public Controller(HttpContext context, Parameters parameters) : base(context, parameters){}
 
@@ -22,10 +18,10 @@ namespace Datasilk.Mvc
             var scaffold = new Scaffold("/Views/Shared/layout.html");
             scaffold.Data["title"] = title;
             scaffold.Data["description"] = description;
-            scaffold.Data["head-css"] = headCss.ToString();
+            scaffold.Data["head-css"] = css.ToString();
             scaffold.Data["favicon"] = favicon;
             scaffold.Data["body"] = body;
-
+            
             //add initialization script
             scaffold.Data["scripts"] = scripts.ToString();
 
@@ -51,14 +47,17 @@ namespace Datasilk.Mvc
             return "<script language=\"javascript\">window.location.href = '" + url + "';</script>";
         }
 
-        protected void AddScript(string url, string id = "")
+        public override void AddScript(string url, string id = "", string callback = "")
         {
-            scripts.Append("<script language=\"javascript\"" + (id != "" ? " id=\"" + id + "\"" : "") + " src=\"" + url + "\"></script>");
+            if (ResourceAdded(url)) { return; }
+            scripts.Append("<script language=\"javascript\"" + (id != "" ? " id=\"" + id + "\"" : "") + " src=\"" + url + "\"" + 
+                (callback != "" ? " onload=\"" + callback + "\"" : "") + "></script>");
         }
 
-        protected void AddCSS(string url, string id = "")
+        public override void AddCSS(string url, string id = "")
         {
-            headCss.Append("<link rel=\"stylesheet\" type=\"text/css\"" + (id != "" ? " id=\"" + id + "\"" : "") + " href=\"" + url + "\"></link>");
+            if (ResourceAdded(url)) { return; }
+            css.Append("<link rel=\"stylesheet\" type=\"text/css\"" + (id != "" ? " id=\"" + id + "\"" : "") + " href=\"" + url + "\"></link>");
         }
     }
 }
