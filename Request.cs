@@ -8,8 +8,8 @@ namespace Datasilk.Web
 {
     public class Request
     {
-        protected HttpContext context;
-        protected Parameters parameters;
+        public HttpContext context;
+        public Parameters parameters;
         public StringBuilder scripts = new StringBuilder();
         public StringBuilder css = new StringBuilder();
         private List<string> _exists = new List<string>();
