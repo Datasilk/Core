@@ -15,5 +15,15 @@
         public string html = ""; //HTML response
         public string javascript = ""; //optional javascript to insert onto the page dynamically
         public string css = ""; //optional CSS to insert onto the page dynamically
+        public string json = "";
+
+        public Response(string html = "", string javascript = "", string css = "", string json = "", string selector = "", responseType type = responseType.replace)
+        {
+            this.html = html;
+            this.javascript = javascript;
+            this.css = css;
+            this.selector = selector;
+            this.type = type;
+        }
     }
 }
