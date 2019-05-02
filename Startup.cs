@@ -325,7 +325,15 @@ namespace Datasilk
                         else
                         {
                             //convert param value to matching method parameter type
-                            paramVals[x] = Convert.ChangeType(param, paramType);
+                            try
+                            {
+                                paramVals[x] = Convert.ChangeType(param, paramType);
+                            }
+                            catch (Exception)
+                            {
+                                //try to deserialize JSON object instead
+                                paramVals[x] = Serializer.ReadObject(param, paramType);
+                            }
                         }
                     }
                     else
