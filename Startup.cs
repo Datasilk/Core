@@ -223,8 +223,10 @@ namespace Datasilk
                         await context.Response.WriteAsync("service error");
                         return;
                     }
-
                 }
+
+                //update service fields
+                service.path = path;
 
 
                 //get class method from service type
@@ -404,6 +406,7 @@ namespace Datasilk
                     //render page
                     try
                     {
+                        page.path = path;
                         html = page.Render(newpaths);
                     }
                     catch (Exception ex)
