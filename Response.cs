@@ -23,6 +23,7 @@
             this.javascript = javascript;
             this.css = css;
             this.selector = selector;
+            this.json = json;
             this.type = type;
         }
     }

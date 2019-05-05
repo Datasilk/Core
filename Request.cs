@@ -9,6 +9,7 @@ namespace Datasilk.Web
     public class Request
     {
         public HttpContext context;
+        public string path;
         public Parameters parameters;
         public StringBuilder scripts = new StringBuilder();
         public StringBuilder css = new StringBuilder();
