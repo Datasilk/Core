@@ -168,6 +168,13 @@ namespace Datasilk
 
             //get parameters from request body
             var parameters = HeaderParameters.GetParameters(context);
+            var requestBody = "";
+            if (parameters.ContainsKey("_request-body"))
+            {
+                //extract request body from parameters
+                requestBody = parameters["_request-body"];
+                parameters.Remove("_request-body");
+            }
 
             if (paths.Length > 1 && Server.servicePaths.Contains(paths[0]) == true)
             {
@@ -227,7 +234,7 @@ namespace Datasilk
 
                 //update service fields
                 service.path = path;
-
+                service.requestBody = requestBody;
 
                 //get class method from service type
                 MethodInfo method = type.GetMethod(methodName);
@@ -399,6 +406,7 @@ namespace Datasilk
                     try
                     {
                         page.path = path;
+                        page.requestBody = requestBody;
                         html = page.Render(newpaths);
                     }
                     catch (Exception ex)

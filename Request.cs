@@ -10,6 +10,7 @@ namespace Datasilk.Web
     {
         public HttpContext context;
         public string path;
+        public string requestBody = "";
         public Parameters parameters;
         public StringBuilder scripts = new StringBuilder();
         public StringBuilder css = new StringBuilder();
@@ -56,16 +57,28 @@ namespace Datasilk.Web
             return false;
         }
 
-        public string Error()
+        public virtual string Error(string message = "")
         {
             context.Response.StatusCode = 500;
             return Server.LoadFileFromCache("/Views/500.html");
         }
 
-        public string Error404()
+        public virtual string Error404(string message = "")
         {
             context.Response.StatusCode = 404;
             return Server.LoadFileFromCache("/Views/404.html");
+        }
+
+        public virtual string AccessDenied(string message = "")
+        {
+            context.Response.StatusCode = 403;
+            return Server.LoadFileFromCache("/Views/403.html");
+        }
+
+        public virtual string BadRequest(string message = "")
+        {
+            context.Response.StatusCode = 400;
+            return Server.LoadFileFromCache("/Views/400.html");
         }
 
         public virtual void AddScript(string url, string id = "", string callback = "") { }

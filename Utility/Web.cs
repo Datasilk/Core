@@ -27,6 +27,7 @@ namespace Utility.Web
 
             if (data.Length > 0)
             {
+                parms.Add("_request-body", data);
                 if (data.IndexOf("Content-Disposition") < 0 && data.IndexOf("{") >= 0 && data.IndexOf("}") > 0 && data.IndexOf(":") > 0)
                 {
                     //get method parameters from POST S.ajax.post()

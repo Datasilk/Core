@@ -8,18 +8,24 @@ namespace Datasilk.Web
     {
         public Service(HttpContext context, Parameters parameters) : base(context, parameters) { }
 
-        public string AccessDenied(string message = "access denied")
+        public override string AccessDenied(string message = "access denied")
         {
             context.Response.StatusCode = 403;
             context.Response.WriteAsync(message);
             return message;
         }
 
-        public string Error(string message)
+        public override string Error(string message = "")
         {
             context.Response.StatusCode = 500;
             context.Response.WriteAsync(message);
             return message;
+        }
+
+        public override string BadRequest(string message = "")
+        {
+            context.Response.StatusCode = 400;
+            return "Bad Request";
         }
 
         public string Success()
