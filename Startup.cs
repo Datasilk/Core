@@ -325,15 +325,7 @@ namespace Datasilk
                         else
                         {
                             //convert param value to matching method parameter type
-                            try
-                            {
-                                paramVals[x] = Convert.ChangeType(param, paramType);
-                            }
-                            catch (Exception)
-                            {
-                                //try to deserialize JSON object instead
-                                paramVals[x] = Serializer.ReadObject(param, paramType);
-                            }
+                            paramVals[x] = Serializer.ReadObject(param, paramType);
                         }
                     }
                     else
@@ -427,8 +419,11 @@ namespace Datasilk
                 page = null;
 
                 //send response back to client
-                context.Response.ContentType = "text/html";
-                await context.Response.WriteAsync(html);
+                if (context.Response.HasStarted == false)
+                {
+                    context.Response.ContentType = "text/html";
+                    await context.Response.WriteAsync(html);
+                }
             }
 
             if (Server.environment == Server.Environment.development)
