@@ -344,6 +344,10 @@ namespace Datasilk
                             //convert param value (JSON) to Dictionary
                             paramVals[x] = (Dictionary<string, string>)Serializer.ReadObject(param, typeof(Dictionary<string, string>));
                         }
+                        else if(paramType.Name == "Boolean")
+                        {
+                            paramVals[x] = param.ToLower() == "true";
+                        }
                         else
                         {
                             //convert param value to matching method parameter type
