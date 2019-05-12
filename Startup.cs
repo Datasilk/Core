@@ -181,6 +181,13 @@ namespace Datasilk
 
             //get parameters from request body
             var parameters = HeaderParameters.GetParameters(context);
+            var requestBody = "";
+            if (parameters.ContainsKey("_request-body"))
+            {
+                //extract request body from parameters
+                requestBody = parameters["_request-body"];
+                parameters.Remove("_request-body");
+            }
 
             if (paths.Length > 1 && Server.servicePaths.Contains(paths[0]) == true)
             {
@@ -240,7 +247,7 @@ namespace Datasilk
 
                 //update service fields
                 service.path = path;
-
+                service.requestBody = requestBody;
 
                 //get class method from service type
                 MethodInfo method = type.GetMethod(methodName);
@@ -340,15 +347,7 @@ namespace Datasilk
                         else
                         {
                             //convert param value to matching method parameter type
-                            try
-                            {
-                                paramVals[x] = Convert.ChangeType(param, paramType);
-                            }
-                            catch (Exception)
-                            {
-                                //try to deserialize JSON object instead
-                                paramVals[x] = Serializer.ReadObject(param, paramType);
-                            }
+                            paramVals[x] = Serializer.ReadObject(param, paramType);
                         }
                     }
                     else
@@ -420,6 +419,7 @@ namespace Datasilk
                     try
                     {
                         page.path = path;
+                        page.requestBody = requestBody;
                         html = page.Render(newpaths);
                     }
                     catch (Exception ex)
@@ -443,8 +443,11 @@ namespace Datasilk
                 page = null;
 
                 //send response back to client
-                context.Response.ContentType = "text/html";
-                await context.Response.WriteAsync(html);
+                if (context.Response.HasStarted == false)
+                {
+                    context.Response.ContentType = "text/html";
+                    await context.Response.WriteAsync(html);
+                }
             }
 
             if (Server.environment == Server.Environment.development)

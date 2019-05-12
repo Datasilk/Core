@@ -28,18 +28,14 @@ namespace Datasilk.Mvc
             return scaffold.Render();
         }
 
-        protected virtual string AccessDenied(bool htmlOutput = true, Controller login = null)
+        protected virtual string AccessDenied(Controller login = null)
         {
-            if (htmlOutput == true)
+            if (!CheckSecurity() && login != null)
             {
-                if (!CheckSecurity() && login != null)
-                {
-                    return login.Render(new string[] { });
-                }
-                var scaffold = new Scaffold("/Views/access-denied.html");
-                return scaffold.Render();
+                return login.Render(new string[] { });
             }
-            return "Access Denied";
+            var scaffold = new Scaffold("/Views/access-denied.html");
+            return scaffold.Render();
         }
 
         protected string Redirect(string url)
