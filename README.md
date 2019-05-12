@@ -34,6 +34,17 @@ Instead of managing a complex ASP.NET Core web application and all of its config
 	> NOTE: You can set up your routes once you start creating Page controllers
 
 6. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
+7. Install the following NuGet packages for your ASP.NET Core project
+   1. Microsoft.AspNetCore
+   2. Microsoft.AspNetCore.Authentication
+   3. Microsoft.AspNetCore.Authentication.Cookies
+   4. Microsoft.AspNetCore.Http.Abstractions
+   5. Microsoft.AspNetCore.HttpsPolicy
+   6. Microsoft.AspNetCore.Session
+   7. Microsoft.AspNetCore.StaticFiles
+   8. Microsoft.AspNetCore.WebUtilities
+   9. Microsoft.Extensions.Caching.Memory
+   10. Microsoft.Extensions.DependencyInjection.Abstractions
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web Controllers & web services.
 

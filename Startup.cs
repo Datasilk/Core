@@ -41,6 +41,10 @@ namespace Datasilk
             //add session
             services.AddSession();
 
+            //add hsts
+            services.AddHsts(options => { });
+            services.AddHttpsRedirection(options =>{});
+
             //allow vendor to configure services
             ConfiguringServices(services);
         }
@@ -116,7 +120,7 @@ namespace Datasilk
             //handle static files
             var provider = new FileExtensionContentTypeProvider();
 
-            // Add new mappings
+            // Add static file mappings
             provider.Mappings[".svg"] = "image/svg";
             var options = new StaticFileOptions
             {
@@ -125,11 +129,20 @@ namespace Datasilk
             app.UseStaticFiles(options);
 
             //exception handling
-            var errOptions = new DeveloperExceptionPageOptions
+            if (env.IsDevelopment())
             {
-                SourceCodeLineCount = 10
-            };
-            app.UseDeveloperExceptionPage();
+                app.UseDeveloperExceptionPage(new DeveloperExceptionPageOptions
+                {
+                    SourceCodeLineCount = 10
+                });
+            }
+            else
+            {
+                app.UseHsts();
+            }
+
+            //redirect to HTTPS
+            app.UseHttpsRedirection();
 
             //Server if finished configuring
             Configured(app, env, config);
