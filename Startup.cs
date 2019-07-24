@@ -173,7 +173,7 @@ namespace Datasilk
 
             if (Server.environment == Server.Environment.development)
             {
-                Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
+                Console.WriteLine("{0} " + context.Request.Method + " {1}", DateTime.Now.ToString("hh:mm:ss"), path);
 
                 //optionally, wipe Scaffold cache to enable developer updates to html files when Server is running
                 ScaffoldCache.cache = new Dictionary<string, SerializedScaffold>();
@@ -218,18 +218,10 @@ namespace Datasilk
                 }
 
                 //get service type
-                Type type = Type.GetType(className);
-
-                //check if service class was found
-                if (type == null)
-                {
-                    context.Response.StatusCode = 404;
-                    await context.Response.WriteAsync("service does not exist");
-                    return;
-                }
+                Type type = null;
 
                 //get instance of service class
-                var service = routes.FromServiceRoutes(context, parameters, className.ToLower());
+                var service = routes.FromServiceRoutes(context, parameters, className.Replace(Server.nameSpace + ".Services.", "").ToLower());
                 if (service == null)
                 {
                     try
@@ -243,6 +235,15 @@ namespace Datasilk
                         await context.Response.WriteAsync("service error");
                         return;
                     }
+                }
+
+                //check if service class was found
+                type = service.GetType();
+                if (type == null)
+                {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("service does not exist");
+                    return;
                 }
 
                 //update service fields
