@@ -34,7 +34,14 @@ namespace Utility.Web
                     Dictionary<string, object> attr = JsonConvert.DeserializeObject<Dictionary<string, object>>(data);
                     foreach (KeyValuePair<string, object> item in attr)
                     {
-                        parms.Add(item.Key.ToLower(), item.Value.ToString());
+                        if(item.Value != null)
+                        {
+                            parms.Add(item.Key.ToLower(), item.Value.ToString());
+                        }
+                        else
+                        {
+                            parms.Add(item.Key.ToLower(), "");
+                        }
                     }
                 }
             }
