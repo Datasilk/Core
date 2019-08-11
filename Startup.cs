@@ -449,9 +449,13 @@ namespace Datasilk
                 page = null;
 
                 //send response back to client
-                if (context.Response.HasStarted == false)
+                if (context.Response.ContentType == null ||
+                    context.Response.ContentType == "")
                 {
                     context.Response.ContentType = "text/html";
+                }
+                if (context.Response.HasStarted == false)
+                {
                     await context.Response.WriteAsync(html);
                 }
             }
