@@ -73,6 +73,7 @@ namespace Datasilk
             Server.nameSpace = config.GetSection("assembly").Value;
             Server.defaultController = config.GetSection("defaultController").Value;
             Server.defaultServiceMethod = config.GetSection("defaultServiceMethod").Value;
+            Server.hostUrl = config.GetSection("hostUrl").Value;
             var servicepaths = config.GetSection("servicePaths").Value;
             if (servicepaths != null && servicepaths != "")
             {

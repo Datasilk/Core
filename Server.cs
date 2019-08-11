@@ -15,6 +15,7 @@ public static class Server
         production = 2
     }
     public static Environment environment = Environment.development;
+    public static string hostUrl = "https://localhost:5000/";
 
     //server properties
     public static DateTime serverStart = DateTime.Now;

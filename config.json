@@ -3,6 +3,8 @@
   "environment": "development",
   "defaultController": "Home",
   "defaultServiceMethod": "Index",
+  "hostUrl": "https://localhost:5000/",
+  "servicePaths": "api",
   "data": {
     "active": "SqlServerTrusted",
     "SqlServerTrusted": "server=.\\SQL2016; database=YOUR_DATABASE; Trusted_Connection=true"
