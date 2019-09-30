@@ -16,14 +16,14 @@ namespace Datasilk.Mvc
         {
             //renders HTML layout
             var scaffold = new Scaffold("/Views/Shared/layout.html");
-            scaffold.Data["title"] = title;
-            scaffold.Data["description"] = description;
-            scaffold.Data["head-css"] = css.ToString();
-            scaffold.Data["favicon"] = favicon;
-            scaffold.Data["body"] = body;
+            scaffold["title"] = title;
+            scaffold["description"] = description;
+            scaffold["head-css"] = css.ToString();
+            scaffold["favicon"] = favicon;
+            scaffold["body"] = body;
             
             //add initialization script
-            scaffold.Data["scripts"] = scripts.ToString();
+            scaffold["scripts"] = scripts.ToString();
 
             return scaffold.Render();
         }

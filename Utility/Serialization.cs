@@ -47,6 +47,10 @@ namespace Utility.Serialization
         {
             return JsonConvert.DeserializeObject(str, objType, new JsonSerializerSettings() { TypeNameHandling = nameHandling });
         }
+        public static T ReadObject<T>(string str, TypeNameHandling nameHandling = TypeNameHandling.Auto)
+        {
+            return JsonConvert.DeserializeObject<T>(str, new JsonSerializerSettings() { TypeNameHandling = nameHandling });
+        }
 
         public static object OpenFromFile(Type objType, string file, TypeNameHandling nameHandling = TypeNameHandling.Auto)
         {

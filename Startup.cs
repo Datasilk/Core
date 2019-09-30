@@ -78,6 +78,7 @@ namespace Datasilk
             Server.nameSpace = config.GetSection("assembly").Value;
             Server.defaultController = config.GetSection("defaultController").Value;
             Server.defaultServiceMethod = config.GetSection("defaultServiceMethod").Value;
+            Server.hostUrl = config.GetSection("hostUrl").Value;
             var servicepaths = config.GetSection("servicePaths").Value;
             if (servicepaths != null && servicepaths != "")
             {
@@ -178,7 +179,7 @@ namespace Datasilk
 
             if (Server.environment == Server.Environment.development)
             {
-                Console.WriteLine("{0} GET {1}", DateTime.Now.ToString("hh:mm:ss"), path);
+                Console.WriteLine("{0} " + context.Request.Method + " {1}", DateTime.Now.ToString("hh:mm:ss"), path);
 
                 //optionally, wipe Scaffold cache to enable developer updates to html files when Server is running
                 ScaffoldCache.cache = new Dictionary<string, SerializedScaffold>();
@@ -223,18 +224,10 @@ namespace Datasilk
                 }
 
                 //get service type
-                Type type = Type.GetType(className);
-
-                //check if service class was found
-                if (type == null)
-                {
-                    context.Response.StatusCode = 404;
-                    await context.Response.WriteAsync("service does not exist");
-                    return;
-                }
+                Type type = null;
 
                 //get instance of service class
-                var service = routes.FromServiceRoutes(context, parameters, className.ToLower());
+                var service = routes.FromServiceRoutes(context, parameters, className.Replace(Server.nameSpace + ".Services.", "").ToLower());
                 if (service == null)
                 {
                     try
@@ -248,6 +241,15 @@ namespace Datasilk
                         await context.Response.WriteAsync("service error");
                         return;
                     }
+                }
+
+                //check if service class was found
+                type = service.GetType();
+                if (type == null)
+                {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("service does not exist");
+                    return;
                 }
 
                 //update service fields
@@ -452,9 +454,13 @@ namespace Datasilk
                 page = null;
 
                 //send response back to client
-                if (context.Response.HasStarted == false)
+                if (context.Response.ContentType == null ||
+                    context.Response.ContentType == "")
                 {
                     context.Response.ContentType = "text/html";
+                }
+                if (context.Response.HasStarted == false)
+                {
                     await context.Response.WriteAsync(html);
                 }
             }
