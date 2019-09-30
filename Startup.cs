@@ -57,14 +57,19 @@ namespace Datasilk
             var path = env.WebRootPath.Replace("wwwroot", "");
             Server.RootPath = path;
 
+            //get environment based on application build
+            Server.environment = env.IsProduction() ? Server.Environment.production :
+                env.IsStaging() ? Server.Environment.staging : Server.Environment.development;
+
             //load application-wide cache
-            if (!File.Exists(Server.MapPath("config.json")))
+            var configFile = "config" + (Server.environment == Server.Environment.production ? ".prod" : "") + ".json";
+            if (!File.Exists(Server.MapPath(configFile)))
             {
                 //generate config file if none exists
                 Serializer.WriteObjectToFile(new Models.Config(), Server.MapPath("config.json"));
             }
             config = new ConfigurationBuilder()
-                .AddJsonFile(Server.MapPath("config.json"))
+                .AddJsonFile(Server.MapPath(configFile))
                 .AddEnvironmentVariables().Build();
 
             Server.config = config;
