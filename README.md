@@ -36,7 +36,7 @@ Instead of managing a complex ASP.NET Core web application and all of its config
 6. Open your *Project Properties*, select the *Application* tab and change *startup object* to use `Datasilk.Program`
 7. Install the following NuGet packages for your ASP.NET Core project
    1. Microsoft.AspNetCore
-   2. Microsoft.AspNetCore.Authentication
+   2. Microsoft.AspNetCore.Authentication.Core
    3. Microsoft.AspNetCore.Authentication.Cookies
    4. Microsoft.AspNetCore.Http.Abstractions
    5. Microsoft.AspNetCore.HttpsPolicy
