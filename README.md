@@ -48,6 +48,23 @@ Instead of managing a complex ASP.NET Core web application and all of its config
 
 That's it! Next, learn how to use the Datasilk Core MVC framework to build web Controllers & web services.
 
+## Config.json
+Various global settings are configured using this file. If publishing to a production environment, create **config.prod.json** and update your configuration for production within that file.
+
+
+|property|default value|description|
+|------------------------|
+|assembly|YOUR_PROJECT|The case-sensitive name of your project's assembly. This is used to correctly route page requests to your controllers & services.
+|version|1.0|Populates `Server.Version` property and is mainly used when versioning JavaScript & CSS files for client-side caching.
+|defaultController|Home|The case-sensitive name of the controller to load if no path is provided in the page request URI.
+|defaultServiceMethod|Index|The case-sensitive name of the service method to execute if an incomplete path is provided within the URI of your web API.
+|hostUrl|https://localhost:5000|The URI used to create absolute paths, which should start with a protocol (**https://**) and end with a back-slash (**/**).
+|servicePaths|api| a comma-delimited list of names used to access your Web API services from the web (e.g. https://localhost:5000/api/User/Authenticate).
+|data > active|SqlServerTrusted|The name of the active database connection to use. This is useful if you'd like to keep multiple databases and switch between databases while debugging
+|data > SqlServerTrusted|server=.\\SQL2017; database=YOUR_DATABASE; Trusted_Connection=true|The default active database connection string. You can create more connection strings within the **data** object and switch between connection strings by using the **data > active** property.
+|encryption > salt|?|A random string used to securely "salt" your encrypted data when using bloatfish. The string can be any length. Change this value only if you haven't encrypted any data within your application or database yet. 
+|encryption > bcrypt_work_factor|10|The work factor used within the bloatfish encryption algorithm. The higher the number, the more CPU cycles it will take to encrypt a string. Recommend using between 8 and 12. Change this value only if you haven't encrypted any data within your application or database yet. 
+
 ## Page Requests
 
 All page request URLs are mapped to controllers that inherit the `Datasilk.Controller` class located in the `Controllers` namespace for your project (e.g. `MyProject.Controllers`). For example, the URL `http://localhost:7770/products` maps to the class `MyProject.Controllers.Products`.

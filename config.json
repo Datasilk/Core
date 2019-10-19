@@ -1,13 +1,13 @@
 {
-  "namespace": "YOUR_PROJECT",
-  "environment": "development",
+  "assembly": "YOUR_PROJECT",
+  "version": "1.0",
   "defaultController": "Home",
   "defaultServiceMethod": "Index",
   "hostUrl": "https://localhost:5000/",
   "servicePaths": "api",
   "data": {
     "active": "SqlServerTrusted",
-    "SqlServerTrusted": "server=.\\SQL2016; database=YOUR_DATABASE; Trusted_Connection=true"
+    "SqlServerTrusted": "server=.\\SQL2017; database=YOUR_DATABASE; Trusted_Connection=true"
   },
 
   "encryption": {

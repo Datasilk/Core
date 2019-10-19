@@ -84,27 +84,14 @@ namespace Datasilk
             {
                 Server.servicePaths = servicepaths.Replace(" ", "").Split(',');
             }
+            if (config.GetSection("version").Value != null)
+            {
+                Server.Version = config.GetSection("version").Value;
+            }
 
             //configure Server database connection strings
             Server.sqlActive = config.GetSection("sql:Active").Value;
             Server.sqlConnectionString = config.GetSection("sql:" + Server.sqlActive).Value;
-
-            //configure Server environment
-            switch (config.GetSection("environment").Value.ToLower())
-            {
-                case "development":
-                case "dev":
-                    Server.environment = Server.Environment.development;
-                    break;
-                case "staging":
-                case "stage":
-                    Server.environment = Server.Environment.staging;
-                    break;
-                case "production":
-                case "prod":
-                    Server.environment = Server.Environment.production;
-                    break;
-            }
 
             //configure Server security
             Server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);

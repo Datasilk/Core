@@ -20,6 +20,7 @@ namespace Datasilk.Mvc
             scaffold["description"] = description;
             scaffold["head-css"] = css.ToString();
             scaffold["favicon"] = favicon;
+            scaffold["version"] = Server.Version;
             scaffold["body"] = body;
             
             //add initialization script
