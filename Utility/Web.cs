@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
@@ -8,7 +9,7 @@ namespace Utility.Web
 {
     public static class HeaderParameters
     {
-        public static Parameters GetParameters(HttpContext context)
+        public async static Task<Parameters> GetParameters(HttpContext context)
         {
             var parms = new Parameters();
             var param = "";
@@ -19,7 +20,7 @@ namespace Utility.Web
                 byte[] bytes = new byte[0];
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    context.Request.Body.CopyTo(ms);
+                    await context.Request.Body.CopyToAsync(ms);
                     bytes = ms.ToArray();
                 }
                 data = Encoding.UTF8.GetString(bytes, 0, bytes.Length).Trim();

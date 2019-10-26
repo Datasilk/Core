@@ -21,7 +21,7 @@ namespace Datasilk
     public class Startup
     {
         protected static IConfigurationRoot config;
-        protected global::Routes routes = new global::Routes();
+        protected Routes routes = new Routes();
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
@@ -51,15 +51,15 @@ namespace Datasilk
 
         public virtual void ConfiguringServices(IServiceCollection services) { }
 
-        public virtual void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             //set root Server path
             var path = env.WebRootPath.Replace("wwwroot", "");
             Server.RootPath = path;
 
             //get environment based on application build
-            Server.environment = env.IsProduction() ? Server.Environment.production :
-                env.IsStaging() ? Server.Environment.staging : Server.Environment.development;
+            Server.environment = env.EnvironmentName == "production" ? Server.Environment.production :
+                env.EnvironmentName == "staging" ? Server.Environment.staging : Server.Environment.development;
 
             //load application-wide cache
             var configFile = "config" + (Server.environment == Server.Environment.production ? ".prod" : "") + ".json";
@@ -122,7 +122,7 @@ namespace Datasilk
             app.UseStaticFiles(options);
 
             //exception handling
-            if (env.IsDevelopment())
+            if (Server.environment == Server.Environment.development)
             {
                 app.UseDeveloperExceptionPage(new DeveloperExceptionPageOptions
                 {
@@ -136,6 +136,7 @@ namespace Datasilk
 
             //redirect to HTTPS
             app.UseHttpsRedirection();
+            
 
             //Server if finished configuring
             Configured(app, env, config);
@@ -144,7 +145,7 @@ namespace Datasilk
             app.Run(async (context) => await Run(context));
         }
 
-        public virtual void Configured(IApplicationBuilder app, IHostingEnvironment env, IConfigurationRoot config){}
+        public virtual void Configured(IApplicationBuilder app, IWebHostEnvironment env, IConfigurationRoot config){}
 
         public virtual async Task Run(HttpContext context)
         {
@@ -173,7 +174,7 @@ namespace Datasilk
             }
 
             //get parameters from request body
-            var parameters = HeaderParameters.GetParameters(context);
+            var parameters = await HeaderParameters.GetParameters(context);
             var requestBody = "";
             if (parameters.ContainsKey("_request-body"))
             {
