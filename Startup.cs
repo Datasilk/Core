@@ -129,12 +129,9 @@ namespace Datasilk
                     SourceCodeLineCount = 10
                 });
             }
-            else
-            {
-                app.UseHsts();
-            }
 
             //redirect to HTTPS
+            app.UseHsts();
             app.UseHttpsRedirection();
             
 
