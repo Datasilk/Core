@@ -54,12 +54,23 @@ namespace Datasilk
         public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             //set root Server path
-            var path = env.WebRootPath.Replace("wwwroot", "");
+            var path = env.ContentRootPath + "\\";
+
             Server.RootPath = path;
 
             //get environment based on application build
-            Server.environment = env.EnvironmentName == "production" ? Server.Environment.production :
-                env.EnvironmentName == "staging" ? Server.Environment.staging : Server.Environment.development;
+            switch (env.EnvironmentName.ToLower())
+            {
+                case "production":
+                    Server.environment = Server.Environment.production;
+                    break;
+                case "staging":
+                    Server.environment = Server.Environment.staging;
+                    break;
+                default:
+                    Server.environment = Server.Environment.development;
+                    break;
+            }
 
             //load application-wide cache
             var configFile = "config" + (Server.environment == Server.Environment.production ? ".prod" : "") + ".json";
@@ -129,11 +140,12 @@ namespace Datasilk
                     SourceCodeLineCount = 10
                 });
             }
-
+            else
+            {
+                app.UseHsts();
+            }
             //redirect to HTTPS
-            app.UseHsts();
             app.UseHttpsRedirection();
-            
 
             //Server if finished configuring
             Configured(app, env, config);

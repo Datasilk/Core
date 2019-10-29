@@ -23,7 +23,7 @@ public static class Server
     public static double pageRequestCount = 0;
     public static double apiRequestCount = 0;
     public static float requestTime = 0;
-    public static string Version = "0.0";
+    public static string Version = "1.0";
 
     //config properties
     public static IConfiguration config;
