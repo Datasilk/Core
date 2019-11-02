@@ -1,4 +1,4 @@
-﻿namespace Datasilk.Web
+﻿namespace Datasilk.Core.Web
 {
     public enum responseType
     {
