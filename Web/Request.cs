@@ -1,7 +1,5 @@
 ﻿using System.Text;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 
 namespace Datasilk.Core.Web
@@ -47,15 +45,7 @@ namespace Datasilk.Core.Web
 
         public virtual bool CheckSecurity()
         {
-            //check cookie authentication
-            AuthenticationHttpContextExtensions.ChallengeAsync(Context,
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new AuthenticationProperties()
-                {
-                    RedirectUri="/access-denied"
-                }
-            );
-            return false;
+            return true;
         }
 
         public virtual string Error(string message = "")

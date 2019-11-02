@@ -26,6 +26,5 @@
         /// Set the default controller to load if the request URI path is empty
         /// </summary>
         public string DefaultController { get; set; } = "home";
-
     }
 }

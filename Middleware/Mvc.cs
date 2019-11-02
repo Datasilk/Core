@@ -129,6 +129,15 @@ namespace Datasilk.Core.Middleware
 
             if (page != null)
             {
+                //check request method
+                if (!CanUseRequestMethod(context, page.GetType().GetMethod("Render")))
+                {
+                    page = new Web.Controller();
+                    page.Init(context, parameters, path, pathParts);
+                    html = page.BadRequest("Page does not support the '" + context.Request.Method + "' request method");
+                    return;
+                }
+
                 //render page
                 page.Init(context, parameters, path, pathParts);
                 html = page.Render();
@@ -160,7 +169,7 @@ namespace Datasilk.Core.Middleware
         private void ProcessService(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)
         {
             //load service class from URL path
-            string className = ReplaceOnlyAlphaNumeric(pathParts[1].Replace("-", ""), true, true, false).ToLower();
+            string className = CleanReflectionName(pathParts[1].Replace("-", "")).ToLower();
             string methodName = pathParts.Length > 2 ? pathParts[2] : Server.defaultServiceMethod;
             if (pathParts.Length >= 4)
             {
@@ -168,10 +177,10 @@ namespace Datasilk.Core.Middleware
                 for (var x = 2; x < pathParts.Length - 1; x++)
                 {
                     //add extra namespaces
-                    className += "." + ReplaceOnlyAlphaNumeric(pathParts[x].Replace("-", ""), true, true, false).ToLower();
+                    className += "." + CleanReflectionName(pathParts[x].Replace("-", "")).ToLower();
                 }
                 //get method name at end of path
-                methodName = ReplaceOnlyAlphaNumeric(pathParts[^1].Replace("-", ""), true, true, false);
+                methodName = CleanReflectionName(pathParts[^1].Replace("-", ""));
             }
 
             //get service type
@@ -224,31 +233,38 @@ namespace Datasilk.Core.Middleware
             if (method == null)
             {
                 context.Response.StatusCode = 404;
-                context.Response.WriteAsync("service method " + methodName + " does not exist");
+                context.Response.WriteAsync("Web service method " + methodName + " does not exist");
+                return;
+            }
+
+            //check request method
+            if(!CanUseRequestMethod(context, method))
+            {
+                context.Response.StatusCode = 400;
+                context.Response.WriteAsync("Web service method " + methodName + " does not accept the '" + context.Request.Method + "' request method");
                 return;
             }
 
             //try to cast params to correct types
             var paramVals = MapParameters(method.GetParameters(), parameters);
 
-            string result = null;
-            try
-            {
-                //execute service method
-                result = (string)method.Invoke(service, paramVals);
-            }
-            catch (Exception ex)
-            {
-                throw ex.InnerException;
-            }
+            //execute service method
+            string result = (string)method.Invoke(service, paramVals);
+
             if (context.Response.StatusCode == 200)
             {
                 //only write response if there were no errors
 
                 if (context.Response.ContentType == null)
                 {
-                    //set content response as JSON
-                    context.Response.ContentType = "text/json";
+                    if(result.IndexOf("{") < 0)
+                    {
+                        context.Response.ContentType = "text/plain";
+                    }
+                    else
+                    {
+                        context.Response.ContentType = "text/json";
+                    }
                 }
                 context.Response.ContentLength = result.Length;
                 if (result != null)
@@ -442,54 +458,55 @@ namespace Datasilk.Core.Middleware
             return paramVals;
         }
 
-        private string ReplaceOnlyAlphaNumeric(string myStr, bool allowAlpha = true, bool allowNumbers = true, bool allowSpaces = true)
+        private string CleanReflectionName(string myStr)
         {
             string newStr = myStr.ToString();
-            bool result;
             int x = 0;
             while (x < newStr.Length)
             {
-                result = false;
-                if (allowAlpha == true)
+                if (
+                        (Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] >= Encoding.ASCII.GetBytes("a")[0] && Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] <= Encoding.ASCII.GetBytes("z")[0]) ||
+                        (Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] >= Encoding.ASCII.GetBytes("A")[0] & Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] <= Encoding.ASCII.GetBytes("Z")[0]) ||
+                        (Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] >= Encoding.ASCII.GetBytes("0")[0] & Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] <= Encoding.ASCII.GetBytes("9")[0])
+                    )
                 {
-                    if (Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] >= Encoding.ASCII.GetBytes("a")[0] && Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] <= Encoding.ASCII.GetBytes("z")[0])
-                    {
-                        result = true;
-                    }
-
-                    if (Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] >= Encoding.ASCII.GetBytes("A")[0] & Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] <= Encoding.ASCII.GetBytes("Z")[0])
-                    {
-                        result = true;
-                    }
+                    x++;
                 }
-
-                if (allowNumbers == true)
-                {
-                    if (Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] >= Encoding.ASCII.GetBytes("0")[0] & Encoding.ASCII.GetBytes(newStr.Substring(x, 1))[0] <= Encoding.ASCII.GetBytes("9")[0])
-                    {
-                        result = true;
-                    }
-                }
-
-                if (allowSpaces == true)
-                {
-                    if (newStr.Substring(x, 1) == " ")
-                    {
-                        result = true;
-                    }
-                }
-
-                if (result == false)
+                else
                 {
                     //remove character
                     newStr = newStr.Substring(0, x - 1) + newStr.Substring(x + 1);
                 }
-                else
-                {
-                    x++;
-                }
             }
             return newStr;
+        }
+
+        private bool CanUseRequestMethod(HttpContext context, MethodInfo method)
+        {
+            var reqMethod = context.Request.Method.ToLower();
+            var hasReqAttr = false;
+            switch (reqMethod)
+            {
+                case "get": hasReqAttr = method.GetCustomAttributes(typeof(Web.GETAttribute), false).Any(); break;
+                case "post": hasReqAttr = method.GetCustomAttributes(typeof(Web.POSTAttribute), false).Any(); break;
+                case "put": hasReqAttr = method.GetCustomAttributes(typeof(Web.PUTAttribute), false).Any(); break;
+                case "head": hasReqAttr = method.GetCustomAttributes(typeof(Web.HEADAttribute), false).Any(); break;
+                case "delete": hasReqAttr = method.GetCustomAttributes(typeof(Web.DELETEAttribute), false).Any(); break;
+            }
+            if (hasReqAttr == false)
+            {
+                //check if method contains other request method attributes
+                if ((method.GetCustomAttributes(typeof(Web.GETAttribute), false).Any() && reqMethod != "get") ||
+                    (method.GetCustomAttributes(typeof(Web.POSTAttribute), false).Any() && reqMethod != "post") ||
+                    (method.GetCustomAttributes(typeof(Web.PUTAttribute), false).Any() && reqMethod != "put") ||
+                    (method.GetCustomAttributes(typeof(Web.HEADAttribute), false).Any() && reqMethod != "head") ||
+                    (method.GetCustomAttributes(typeof(Web.DELETEAttribute), false).Any() && reqMethod != "delete"))
+                {
+                    //display an error
+                    return false;
+                }
+            }
+            return true;
         }
         #endregion
     }
