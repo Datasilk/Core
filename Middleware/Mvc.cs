@@ -88,7 +88,7 @@ namespace Datasilk.Core.Middleware
                 ProcessController(context, path, paths, parameters);
             }
 
-            await _next.Invoke(context);
+            //await _next.Invoke(context);
         }
 
         private void ProcessController(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)

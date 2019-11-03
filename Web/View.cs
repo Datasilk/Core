@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.ComponentModel;
 using System.Runtime.Serialization.Formatters.Binary;
-using Newtonsoft.Json;
 
 [Serializable]
 public struct SerializedView
@@ -48,7 +48,7 @@ public class ViewChild
             }
         }
     }
-    
+
     public string this[string key]
     {
         get
@@ -142,7 +142,8 @@ public class ViewData : IDictionary<string, string>
 {
     private Dictionary<string, string> _data = new Dictionary<string, string>();
 
-    public string this[string key] {
+    public string this[string key]
+    {
         get
         {
             return _data[key];
@@ -461,7 +462,7 @@ public class View
                                     //HTML include variables exist
                                     try
                                     {
-                                        var kv = (Dictionary<string, string>)JsonConvert.DeserializeObject("{" + vars + "}", typeof(Dictionary<string, string>));
+                                        var kv = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
                                         foreach (var kvp in kv)
                                         {
                                             newScaff[kvp.Key] = kvp.Value;
@@ -573,7 +574,7 @@ public class View
                                     var vars = arr[x].Substring(s + 1, i - s - 1);
                                     try
                                     {
-                                        viewElem.Vars = (Dictionary<string, string>)JsonConvert.DeserializeObject("{" + vars + "}", typeof(Dictionary<string, string>));
+                                        viewElem.Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
                                     }
                                     catch (Exception)
                                     {
@@ -677,7 +678,8 @@ public class View
                                     closed.Show.Add(false);
                                 }
                             }
-                            else {
+                            else
+                            {
                                 closed.Show.Add(false);
                             }
 
