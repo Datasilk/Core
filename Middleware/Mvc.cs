@@ -13,7 +13,6 @@ namespace Datasilk.Core.Middleware
 {
     public class Mvc
     {
-        private readonly RequestDelegate _next;
         private readonly MvcOptions _options;
         private int requestCount = 0;
         private Web.Routes routes;
@@ -24,7 +23,6 @@ namespace Datasilk.Core.Middleware
 
         public Mvc(RequestDelegate next, MvcOptions options)
         {
-            _next = next;
             _options = options;
             routes = _options.Routes;
 
@@ -104,7 +102,7 @@ namespace Datasilk.Core.Middleware
 
                 //get namespace from className
                 var classNamespace = "";
-                if (controllerNamespaces.ContainsKey(className))
+                if (!controllerNamespaces.ContainsKey(className))
                 {
                     //find namespace from compiled list of service namespaces
                     classNamespace = controllers.Keys.FirstOrDefault(a => a.Contains(className));
@@ -251,13 +249,11 @@ namespace Datasilk.Core.Middleware
             //execute service method
             string result = (string)method.Invoke(service, paramVals);
 
-            if (context.Response.StatusCode == 200)
+            if (context.Response.HasStarted == false)
             {
-                //only write response if there were no errors
-
                 if (context.Response.ContentType == null)
                 {
-                    if(result.IndexOf("{") < 0)
+                    if (result.IndexOf("{") < 0)
                     {
                         context.Response.ContentType = "text/plain";
                     }
@@ -275,8 +271,8 @@ namespace Datasilk.Core.Middleware
                 {
                     context.Response.WriteAsync("{}");
                 }
-                service.Unload();
             }
+            service.Unload();
         }
 
         #region "Helpers"

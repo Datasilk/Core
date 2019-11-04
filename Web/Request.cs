@@ -33,7 +33,7 @@ namespace Datasilk.Core.Web
         public StringBuilder Css { get; set; } = new StringBuilder();
         public List<string> Resources { get; set; } = new List<string>();
 
-        public void Init(HttpContext context, Parameters parameters, string path, string[] pathParts)
+        public virtual void Init(HttpContext context, Parameters parameters, string path, string[] pathParts)
         {
             Context = context;
             Parameters = parameters;
@@ -51,25 +51,25 @@ namespace Datasilk.Core.Web
         public virtual string Error(string message = "")
         {
             Context.Response.StatusCode = 500;
-            return "";
+            return message;
         }
 
         public virtual string Error404(string message = "")
         {
             Context.Response.StatusCode = 404;
-            return "";
+            return message;
         }
 
         public virtual string AccessDenied(string message = "")
         {
             Context.Response.StatusCode = 403;
-            return "";
+            return message;
         }
 
         public virtual string BadRequest(string message = "")
         {
             Context.Response.StatusCode = 400;
-            return "";
+            return message;
         }
 
         public virtual void AddScript(string url, string id = "", string callback = "") { }

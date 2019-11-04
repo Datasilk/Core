@@ -14,7 +14,7 @@ That's it! Next, learn how to use the Datasilk Core MVC framework to build web C
 
 ## Page Requests
 
-All page request URLs are mapped to controllers that inherit the `Datasilk.Web.Controller` class. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`.
+All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.Controller` class. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`. Each controller contains one method, `Render`, which is used to serve a web page to the user's web browser.
 
 ### Example
 
@@ -28,63 +28,55 @@ All page request URLs are mapped to controllers that inherit the `Datasilk.Web.C
 
 **/Controllers/Home.cs**
 ```
-using Microsoft.AspNetCore.Http;
-
 namespace MyProject.Controllers
 {
-    public class Home: Datasilk.Web.Controller
+    public class Home: Datasilk.Core.Web.Controller
     {
         public Home(HttpContext context) : base(context) {}
 
-        public override string Render(string[] path, string body = "", object metadata = null)
+        public override string Render(string body = "")
 		{
 			//render page
-			var scaffold = new Scaffold("/Views/Home/home.html", Server.Scaffold);
-			scaffold.Data["title"] = "Welcome";
-			scaffold.Data["description"] = "I like to write software";
+			var view = new View("/Views/Home/home.html");
+			view["title"] = "Welcome";
+			view["description"] = "I like to write software";
 			AddScript("/js/views/home/home.js");
-			return base.Render(path, scaffold.Render(), metadata);		
+			return view.Render();		
 		}
 	}
 }
 ```
 
-In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Controllers.Home` class. This class loads `/Views/Home/home.html` into a `Scaffold` object and replaces the `{{title}}` variable located within the `home.html` file with the text "Welcome!". Then, the page returns `base.Render`, which will render HTML from `Views/Shared/layout.html` along with the contents of `scaffold.Render()`, injected into the `<body>` tag of `Views/Shared/layout.html`. 
+In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Controllers.Home` class. This class loads `/Views/Home/home.html` into a `View` object and replaces the `{{title}}` & `{{description}}` variables located within the `home.html` file with the text "Welcome!". Then, the page returns the contents of `view.Render()`.
+
+You could create controllers that inherit other controllers, then `return base.Rennder(view.Render())` to create a cascade. This would be useful to have a base controller that renders the header & footer of a web page, while all other controllers render the body.
 
 > NOTE: `MyProject.Controllers.Home` is the default class that is instantiated if the URL contains a domain name with no path structure. 
 
 ### Page Hierarchy
-To render web Controllers based on complex URL paths, the Datasilk Core framework relies heavily on the first part of the request path to determine which class to instantiate. For example, if the user accesses the URL `http://localhost:7770/blog/2018/01/21/Progress-Report`, Datasilk Core initializes the `MyProject.Controllers.Blog` class. 
+To render web Controllers based on complex URL paths, the MVC framework relies heavily on the first part of the request path to determine which class to instantiate. For example, if the user accesses the URL `http://localhost:7770/blog/2018/01/21/Progress-Report`, Datasilk Core MVC initializes the `MyProject.Controllers.Blog` class. 
 
-The request path is split up into an array and passed into the overridable `Render` function located in your `Datasilk.Controller` class. The `paths` array is used to determine what type of content to load for the user. If we're loading a blog post like the above example, we can check the `paths` array to find year, month, and day, followed by the title of the blog post, and determine which blog post to load.
-
-### Datasilk.Controller
-Inherited in classes that are used to render page requests.
+The request path is split up into an array and passed into the `PathParts` field within the `Datasilk.Core.Web.Controller` class. The `PathParts` array is used to determine what type of content to load for the user. If we're loading a blog post like the above example, we can check the `PathParts` array to find year, month, and day, followed by the title of the blog post, and determine which blog post to load.
 
 ### Access Denied
 If your web page is secure and must display an `Access Denied` page, you can use: 
 
-```return AccessDenied(Login(S))```
+```return AccessDenied<IController>()```
 
- from within your `Datasilk.Controller` class `Render` method, which will return the contents of the file `Views/access-denied.html`. If a `Datasilk.Controller` class is supplied (e.g. `Login(S)`), instead of loading `Views/access-denied.html`, it will render an instance of your `Datasilk.Controller` class.
-
-> NOTE: You can find more functionality for the `Controller` class inside `/Core/Controller.cs`.
+ from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `403`.
 
 ## Web Services
-The Datasilk Core framework comes with the ability to call `RESTful` web APIs. All web API calls are executed from `Service` classes located in the `Services` namespace within your project (e.g. `MyProject.Services`) and will inherit the `Datasilk.Service` class.
+The Datasilk Core MVC framework comes with the ability to call `RESTful` web APIs. All web API calls are executed from `Datasilk.Core.Web.Service` classes.
 
 #### Example
 
 ```
-using Microsoft.AspNetCore.Http;
-
 namespace MyProject.Services
 {
-    public class User: Datasilk.Service
+    public class User: Datasilk.Core.Web.Service
     {
-        public User(HttpContext context) : base(context) {}
-
-        public string Authenticate(string email, string password)
+		[POST]
+		public string Authenticate(string email, string password)
 		{
 			//authenticate user
 			//...
@@ -99,46 +91,51 @@ namespace MyProject.Services
 }
 ```
 
-In the example above, the user would send an `AJAX` `POST` via Javascript to the URL `/api/User/Authenticate` to authenticate their email & password. The data sent to the server would be formatted using `JSON.stringify({email:myemail, password:mypass});`, and the data properties would be mapped to C# method arguments.
+In the example above, the user would send an `AJAX` `POST` via Javascript to the URL `/api/User/Authenticate` to authenticate their email & password. The data sent to the server would be formatted using the JavaScript function, `JSON.stringify({email:myemail, password:mypass})`, and the data properties would be mapped to C# method arguments.
 
 ### Web Service Response Object
-All `Datasilk.Service` methods should return a string, but can also return a `Datasilk.Datasilk.Response` object, which will allow the user to specify where in the DOM to inject HTML, how it should be injected (replace, append, before, after), and whether or not to load some custom javascript code or CSS styles. For example:
+All `Datasilk.Core.Web.Service` methods should return a string. You can easily return a JSON object as well.
 
 ```
-return Inject(".myclass", injectType.replace, myHtml, myJavascript, myCss)
+using System.Text.Json;
+...
+return JsonSerializer.Serialize(obj);
 ```
-
-> NOTE: You must first install the optional JavaScript library [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs) and use the JavaScript function `S.ajax` in order to correctly process the JSON response from a Web Service method that returns a `Datasilk.Datasilk.Response` object
 
 ## Routes.cs
 Your project now includes `Routes.cs`, an empty class file in the root folder. Use it by mapping request path names to new instances of `Datasilk.Controller` classes. For example:
 ```
 using Microsoft.AspNetCore.Http;
-using Datasilk;
+using Datasilk.Core.Web;
 
-public class Routes : Datasilk.Routes
+public class Routes : Datasilk.Core.Web.Routes
 {
-    public override Controller FromControllerRoutes(HttpContext context, string name)
+    public override IController FromControllerRoutes(HttpContext context, Parameters parameters, string name)
     {
         switch (name)
         {
-            case "": case "home": return new MyProject.Controllers.Home(S);
-            case "login": return new MyProject.Controllers.Login(S);
-            case "dashboard": return new MyProject.Controllers.Dashboard(S);
+            case "": case "home": return new Controllers.Home();
+            case "login": return new Controllers.Login();
+            case "dashboard": return new Controllers.Dashboard();
         }
         return null;
     }
 
-    public override Service FromServiceRoutes(HttpContext context, string name)
+    public override IService FromServiceRoutes(HttpContext context, Parameters parameters, string name)
     {
+        switch (name)
+        {
+            case "": case "user": return new Services.User();
+            case "dashboard": return new Services.Dashboard();
+        }
         return null;
     }
 }
 ```
 
 #### Why Routing?
-By routing new class instances using the `new` keyword, you bypass the last resort for Datasilk Core, which is to create an instance of your `Controller` class using `Activator.CreateInstance`, taking 10 times the amount of CPU ticks to instatiate. You don't have to use routing, but it does speed up performance.
+By routing new class instances using the `new` keyword, you bypass the last resort for Datasilk Core MVC, which is to create an instance of your `Controller` class using `Activator.CreateInstance`, taking 10 times the amount of CPU ticks to instatiate. You don't have to use routing, but it does speed up performance.
 
 
 ## Optional: Datasilk Core Javascript Library
-Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains the appropriate functionality used to make ajax calls and inject content onto the page. The library includes other optional features, such as message alert boxes, popup modals, drag & drop functionality, and HTML templating.
+Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains various client-side features used to build a modern web application. The library includes features such as message alert boxes, popup modals, drag & drop functionality, HTML templating, and custom scrollbars.
