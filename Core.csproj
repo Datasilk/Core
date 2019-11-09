@@ -1,19 +1,35 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <Version>0.7</Version>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <Version>1.0</Version>
+    <RootNamespace>Datasilk.Core</RootNamespace>
+    <PackageId>Datasilk.Core.Mvc</PackageId>
+    <Authors>Mark Entingh</Authors>
+    <Company>Datasilk</Company>
+    <Product>Datasilk Core MVC</Product>
+    <Description>An ultra-lightweight MVC framework for the web that handles page requests and RESTful web API calls.</Description>
+    <Copyright>Datasilk 2019</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://mvc.datasilk.io/</PackageProjectUrl>
+    <PackageIconUrl>https://mvc.datasilk.io/images/favicon.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/datasilk/core</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageTags>MVC, Web API, lightweight</PackageTags>
+    <PackageReleaseNotes>This is the first official release of Datasilk Core MVC. After using this MVC framework in various projects over the past 3 years, I've made the effort to publish a stable release to Nuget.</PackageReleaseNotes>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <None Include="LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+  </ItemGroup>
+
 
 </Project>

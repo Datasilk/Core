@@ -85,7 +85,7 @@ namespace Datasilk.Core.Middleware
                     ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"), requestCount);
             }
 
-            if (paths.Length > 1 && Server.servicePaths.Contains(paths[0]) == true)
+            if (paths.Length > 1 && options.ServicePaths.Contains(paths[0]) == true)
             {
                 //handle web API requests
                 ProcessService(context, path, paths, parameters);
@@ -178,7 +178,7 @@ namespace Datasilk.Core.Middleware
         {
             //load service class from URL path
             string className = CleanReflectionName(pathParts[1].Replace("-", "")).ToLower();
-            string methodName = pathParts.Length > 2 ? pathParts[2] : Server.defaultServiceMethod;
+            string methodName = pathParts.Length > 2 ? pathParts[2] : options.DefaultServiceMethod;
             if (pathParts.Length >= 4)
             {
                 //path also contains extra namespace path(s)

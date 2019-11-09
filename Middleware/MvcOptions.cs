@@ -26,5 +26,10 @@
         /// Set the default controller to load if the request URI path is empty
         /// </summary>
         public string DefaultController { get; set; } = "home";
+
+        /// <summary>
+        /// Set the default service method to load if the request URI path is empty
+        /// </summary>
+        public string DefaultServiceMethod { get; set; } = "Get";
     }
 }

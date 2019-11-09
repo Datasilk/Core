@@ -17,6 +17,18 @@ namespace Datasilk.Core.Web
             var controller = LoadController<T>();
             return controller.Render();
         }
+
+        static string Error<T>() where T : IController
+        {
+            var controller = LoadController<T>();
+            return controller.Render();
+        }
+
+        static string Error404<T>() where T : IController
+        {
+            var controller = LoadController<T>();
+            return controller.Render();
+        }
     }
 
 
@@ -27,8 +39,21 @@ namespace Datasilk.Core.Web
             return body;
         }
 
+        public string Error<T>() where T : IController
+        {
+            Context.Response.StatusCode = 500;
+            return IController.Error<T>();
+        }
+
+        public string Error404<T>() where T : IController
+        {
+            Context.Response.StatusCode = 404;
+            return IController.Error404<T>();
+        }
+
         public string AccessDenied<T>() where T : IController
         {
+            Context.Response.StatusCode = 403;
             return IController.AccessDenied<T>();
         }
 
