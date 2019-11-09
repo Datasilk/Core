@@ -30,7 +30,7 @@ namespace Datasilk.Core.Middleware
             routes = this.options.Routes;
 
             //get a list of controllers from the assembly
-            var types = Assembly.GetExecutingAssembly().GetTypes()
+            var types = Assembly.GetCallingAssembly().GetTypes()
                 .Where(type => typeof(Web.IController).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract && type.Name != "Controller").ToList();
             foreach (var type in types)
             {
@@ -40,7 +40,7 @@ namespace Datasilk.Core.Middleware
                 }
             }
 
-            types = Assembly.GetExecutingAssembly().GetTypes()
+            types = Assembly.GetCallingAssembly().GetTypes()
                 .Where(type => typeof(Web.IService).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract && type.Name != "Service").ToList();
             foreach (var type in types)
             {

@@ -1,4 +1,4 @@
-![Datasilk Logo](http://www.markentingh.com/projects/datasilk/logo.png)
+![Datasilk Logo](https://www.markentingh.com/projects/datasilk/logo.png)
 
 # Datasilk Core MVC
 #### An MVC Framework for ASP.NET Core
