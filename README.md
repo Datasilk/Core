@@ -4,7 +4,7 @@
 #### An MVC Framework for ASP.NET Core
 Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC 5 that supports HTML scaffolding and simple web services.
 
-Instead of managing a complex ASP.NET Core web application and all of its configuration, simply include this framework within your own ASP.NET Core Web Application project, follow the installation instructions below, and start building your website!
+Instead of managing a complex ASP.NET Core web application and all of its configuration, simply include this framework within your own ASP.NET Core Web Application project and start building your website!
 
 ## Installation
 
@@ -30,7 +30,7 @@ public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 
 ## Page Requests
 
-All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.Controller` class. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`. Each controller contains one method, `Render`, which is used to serve a web page to the user's web browser.
+All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.IController` interface. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`. Each controller contains one method, `Render`, which is used to serve a web page to the user's web browser.
 
 **/Views/Home/home.html**
 ```
@@ -147,7 +147,7 @@ If your web page is protected behind security and must display an `Access Denied
  from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `403`.
 
 ## Web Services
-The Datasilk Core MVC framework comes with the ability to call *RESTful* web APIs. All web API calls are executed from `Datasilk.Core.Web.Service` classes.
+The Datasilk Core MVC framework comes with the ability to call *RESTful* web APIs. All web API calls are executed from `Datasilk.Core.Web.IService` interfaces.
 
 #### Example
 

@@ -21,7 +21,7 @@ app.UseDatasilkMvc(new MvcOptions()
 
 ## Page Requests
 
-All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.Controller` class. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`.
+All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.IController` interface. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`.
 
 **/Views/Home/home.html**
 ```
@@ -51,7 +51,7 @@ namespace MyProject.Controllers
 ```
 
 ## Web Services
-The Datasilk Core MVC framework comes with the ability to call *RESTful* web APIs. All web API calls are executed from `Datasilk.Core.Web.Service` classes.
+The Datasilk Core MVC framework comes with the ability to call *RESTful* web APIs. All web API calls are executed from `Datasilk.Core.Web.IService` interfaces.
 
 #### Example
 
