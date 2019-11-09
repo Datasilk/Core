@@ -8,12 +8,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Logging;
 
 namespace Datasilk.Core.Middleware
 {
     public class Mvc
     {
-        private readonly MvcOptions _options;
+        private readonly ILogger Logger;
+        private readonly MvcOptions options;
         private int requestCount = 0;
         private Web.Routes routes;
         private Dictionary<string, Type> controllers = new Dictionary<string, Type>();
@@ -21,10 +23,11 @@ namespace Datasilk.Core.Middleware
         private Dictionary<string, string> controllerNamespaces = new Dictionary<string, string>();
         private Dictionary<string, string> serviceNamespaces = new Dictionary<string, string>();
 
-        public Mvc(RequestDelegate next, MvcOptions options)
+        public Mvc(RequestDelegate next, MvcOptions options, ILoggerFactory loggerFactory)
         {
-            _options = options;
-            routes = _options.Routes;
+            Logger = loggerFactory.CreateLogger<Mvc>();
+            this.options = options;
+            routes = this.options.Routes;
 
             //get a list of controllers from the assembly
             var types = Assembly.GetExecutingAssembly().GetTypes()
@@ -46,11 +49,13 @@ namespace Datasilk.Core.Middleware
                     services.Add((type.FullName).ToLower(), type);
                 }
             }
+            Logger.LogInformation("Datasilk Core MVC started ({0} controllers, {1} services)",
+                controllers.Count, services.Count);
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (_options.IgnoreRequestBodySize == true)
+            if (options.IgnoreRequestBodySize == true)
             {
                 context.Features.Get<IHttpMaxRequestBodySizeFeature>().MaxRequestBodySize = null;
             }
@@ -70,9 +75,14 @@ namespace Datasilk.Core.Middleware
             //get parameters from request body
             var parameters = await GetParameters(context);
 
-            if (_options.WriteDebugInfoToConsole == true)
+            if (options.WriteDebugInfoToConsole == true)
             {
-                Console.WriteLine("{0}, " + context.Request.Method + " {1}, {2} kb, # {3}", DateTime.Now.ToString("hh:mm:ss"), path, ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"), requestCount);
+                Logger.LogDebug("{0}, {1} {2} ({3}), {4} kb, # {5}",
+                    DateTime.Now.ToString("hh:mm:ss"),
+                    context.Request.Method,
+                    string.IsNullOrEmpty(path) ? "/" : path,
+                    Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
+                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"), requestCount);
             }
 
             if (paths.Length > 1 && Server.servicePaths.Contains(paths[0]) == true)
@@ -98,7 +108,7 @@ namespace Datasilk.Core.Middleware
             if (page == null)
             {
                 //page is not part of any known routes, try getting page class manually
-                var className = (newpaths[0] == "" ? _options.DefaultController : newpaths[0].Replace("-", " ")).Replace(" ", "").ToLower();
+                var className = (newpaths[0] == "" ? options.DefaultController : newpaths[0].Replace("-", " ")).Replace(" ", "").ToLower();
 
                 //get namespace from className
                 var classNamespace = "";
