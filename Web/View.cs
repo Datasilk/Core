@@ -251,6 +251,13 @@ public class ViewData : IDictionary<string, string>
     }
 }
 
+public class ViewOptions
+{
+    public string Html { get; set; }
+    public string File { get; set; }
+    public string Section { get; set; }
+}
+
 public class View
 {
     public List<ViewElement> Elements;
@@ -275,6 +282,18 @@ public class View
         return children[id];
     }
 
+    public View(ViewOptions options)
+    {
+        if (options.Html != null && options.Html != "")
+        {
+            Setup("", "", options.Html);
+        }
+        else
+        {
+            Setup(options.File, options.Section, "");
+        }
+    }
+
     /// <summary>
     /// Use a template file to bind data and replace mustache variables with data, e.g. {{my-name}} is replaced with value of View["my-name"]
     /// </summary>
@@ -282,7 +301,7 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, Dictionary<string, SerializedView> cache = null)
     {
-        Setup(file, "", cache);
+        Setup(file, "", "", cache);
     }
 
     /// <summary>
@@ -293,7 +312,7 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, string section, Dictionary<string, SerializedView> cache = null)
     {
-        Setup(file, section, cache);
+        Setup(file, section, "", cache);
     }
 
     public string this[string key]
@@ -356,33 +375,44 @@ public class View
         }
     }
 
-    private void Setup(string file, string section = "", Dictionary<string, SerializedView> cache = null, bool loadPartials = true)
+    private void Setup(string file, string section = "", string html = "", Dictionary<string, SerializedView> cache = null, bool loadPartials = true)
     {
         SerializedView cached = new SerializedView() { Elements = new List<ViewElement>() };
         data = new ViewData();
         Section = section;
-        if (cache == null && ViewCache.cache != null)
+        if (file != "")
         {
-            cache = ViewCache.cache;
-        }
-        if (cache != null)
-        {
-            if (cache.ContainsKey(file + '/' + section) == true)
+            if (cache == null && ViewCache.cache != null)
             {
-                cached = cache[file + '/' + section];
-                data = cached.Data;
-                Elements = cached.Elements;
-                Fields = cached.Fields;
+                cache = ViewCache.cache;
+            }
+            if (cache != null)
+            {
+                if (cache.ContainsKey(file + '/' + section) == true)
+                {
+                    cached = cache[file + '/' + section];
+                    data = cached.Data;
+                    Elements = cached.Elements;
+                    Fields = cached.Fields;
+                }
             }
         }
+
         if (cached.Elements.Count == 0)
         {
             Elements = new List<ViewElement>();
 
             //try loading file from disk
-            if (File.Exists(MapPath(file)))
+            if (file != "")
             {
-                HTML = File.ReadAllText(MapPath(file));
+                if (File.Exists(MapPath(file)))
+                {
+                    HTML = File.ReadAllText(MapPath(file));
+                }
+            }
+            else
+            {
+                HTML = html;
             }
             if (HTML.Trim() == "") { return; }
 
