@@ -850,9 +850,9 @@ public class View
 
     private static string MapPath(string strPath = "")
     {
-        var path = Path.GetFullPath(".") + "\\";
-        var str = strPath.Replace("/", "\\");
-        if (str.Substring(0, 1) == "\\") { str = str.Substring(1); }
-        return path + str;
+        var path = Path.GetFullPath(".").Replace("\\", "/").Split('/');
+        var str = strPath.Replace("\\", "/");
+        if (str.Substring(0, 1) == "/") { str = str.Substring(1); }
+        return Path.Combine((new string[] { "/" }).Concat(path.Concat(str.Split('/')).ToArray()).ToArray());
     }
 }

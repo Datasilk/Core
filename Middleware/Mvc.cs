@@ -14,6 +14,7 @@ namespace Datasilk.Core.Middleware
 {
     public class Mvc
     {
+        private RequestDelegate _next { get; set; }
         private readonly ILogger Logger;
         private readonly MvcOptions options;
         private int requestCount = 0;
@@ -25,35 +26,49 @@ namespace Datasilk.Core.Middleware
 
         public Mvc(RequestDelegate next, MvcOptions options, ILoggerFactory loggerFactory)
         {
+            _next = next;
             Logger = loggerFactory.CreateLogger<Mvc>();
             this.options = options;
             routes = this.options.Routes;
-
-            //get a list of controllers from the assembly
-            var types = Assembly.GetCallingAssembly().GetTypes()
-                .Where(type => typeof(Web.IController).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract && type.Name != "Controller").ToList();
-            foreach (var type in types)
+            var assemblies = new List<Assembly> { Assembly.GetCallingAssembly() };
+            if (!assemblies.Contains(Assembly.GetExecutingAssembly()))
             {
-                if (!type.Equals(typeof(Web.IController)))
-                {
-                    controllers.Add((type.FullName).ToLower(), type);
-                }
+                assemblies.Add(Assembly.GetExecutingAssembly());
+            }
+            if (!assemblies.Contains(Assembly.GetEntryAssembly()))
+            {
+                assemblies.Add(Assembly.GetEntryAssembly());
             }
 
-            types = Assembly.GetCallingAssembly().GetTypes()
-                .Where(type => typeof(Web.IService).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract && type.Name != "Service").ToList();
-            foreach (var type in types)
+            foreach(var assembly in assemblies)
             {
-                if (!type.Equals(typeof(Web.IService)))
+                //get a list of controllers from the assembly
+                var types = assembly.GetTypes()
+                    .Where(type => typeof(Web.IController).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract && type.Name != "Controller").ToList();
+                foreach (var type in types)
                 {
-                    services.Add((type.FullName).ToLower(), type);
+                    if (!type.Equals(typeof(Web.IController)))
+                    {
+                        controllers.Add((type.FullName).ToLower(), type);
+                    }
+                }
+
+                types = assembly.GetTypes()
+                    .Where(type => typeof(Web.IService).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract && type.Name != "Service").ToList();
+                foreach (var type in types)
+                {
+                    if (!type.Equals(typeof(Web.IService)))
+                    {
+                        services.Add((type.FullName).ToLower(), type);
+                    }
                 }
             }
+            
             Logger.LogInformation("Datasilk Core MVC started ({0} controllers, {1} services)",
                 controllers.Count, services.Count);
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task Invoke(HttpContext context)
         {
             if (options.IgnoreRequestBodySize == true)
             {
