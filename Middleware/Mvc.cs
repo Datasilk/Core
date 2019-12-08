@@ -66,6 +66,8 @@ namespace Datasilk.Core.Middleware
             
             Logger.LogInformation("Datasilk Core MVC started ({0} controllers, {1} services)",
                 controllers.Count, services.Count);
+            Console.WriteLine("Datasilk Core MVC started ({0} controllers, {1} services)",
+                controllers.Count, services.Count);
         }
 
         public async Task Invoke(HttpContext context)
