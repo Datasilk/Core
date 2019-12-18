@@ -8,14 +8,15 @@
         after = 3
     }
 
+    //used to send a JSON object back to the client web browser
     public class Response
     {
-        public responseType type = responseType.replace; //type of insert command
-        public string selector = ""; //css selector to insert response HTML into
-        public string html = ""; //HTML response
-        public string javascript = ""; //optional javascript to insert onto the page dynamically
-        public string css = ""; //optional CSS to insert onto the page dynamically
-        public string json = "";
+        public responseType type { get; set; } = responseType.replace; //type of insert command
+        public string selector { get; set; } = ""; //css selector to insert response HTML into
+        public string html { get; set; } = ""; //HTML response
+        public string javascript { get; set; } = ""; //optional javascript to insert onto the page dynamically
+        public string css { get; set; } = ""; //optional CSS to insert onto the page dynamically
+        public string json { get; set; } = "";
 
         public Response(string html = "", string javascript = "", string css = "", string json = "", string selector = "", responseType type = responseType.replace)
         {

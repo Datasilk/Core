@@ -286,11 +286,11 @@ public class View
     {
         if (options.Html != null && options.Html != "")
         {
-            Setup("", "", options.Html);
+            Parse("", "", options.Html);
         }
         else
         {
-            Setup(options.File, options.Section, "");
+            Parse(options.File, options.Section, "");
         }
     }
 
@@ -301,7 +301,7 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, Dictionary<string, SerializedView> cache = null)
     {
-        Setup(file, "", "", cache);
+        Parse(file, "", "", cache);
     }
 
     /// <summary>
@@ -312,7 +312,7 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, string section, Dictionary<string, SerializedView> cache = null)
     {
-        Setup(file, section, "", cache);
+        Parse(file, section, "", cache);
     }
 
     public string this[string key]
@@ -375,17 +375,21 @@ public class View
         }
     }
 
-    private void Setup(string file, string section = "", string html = "", Dictionary<string, SerializedView> cache = null, bool loadPartials = true)
+    private void Parse(string file, string section = "", string html = "", Dictionary<string, SerializedView> cache = null, bool loadPartials = true)
     {
         SerializedView cached = new SerializedView() { Elements = new List<ViewElement>() };
         data = new ViewData();
         Section = section;
         if (file != "")
         {
-            if (cache == null && ViewCache.cache != null)
-            {
-                cache = ViewCache.cache;
-            }
+#if (!DEBUG)
+        if (cache == null && ViewCache.cache != null)
+        {
+            cache = ViewCache.cache;
+        }
+#endif
+
+
             if (cache != null)
             {
                 if (cache.ContainsKey(file + '/' + section) == true)
@@ -850,9 +854,9 @@ public class View
 
     private static string MapPath(string strPath = "")
     {
-        var path = Path.GetFullPath(".").Replace("\\", "/").Split('/');
-        var str = strPath.Replace("\\", "/");
-        if (str.Substring(0, 1) == "/") { str = str.Substring(1); }
-        return Path.Combine((new string[] { "/" }).Concat(path.Concat(str.Split('/')).ToArray()).ToArray());
+        var path = Path.GetFullPath(".").Replace("/", "/");
+        var path2 = strPath.Replace("\\", "/");
+        if (path2.Substring(0, 1) == "/") { path2 = path2.Substring(1); }
+        return Path.Combine(path, path2);
     }
 }
