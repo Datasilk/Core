@@ -263,6 +263,7 @@ public class View
     public List<ViewElement> Elements;
     public List<ViewPartial> Partials = new List<ViewPartial>();
     public Dictionary<string, int[]> Fields = new Dictionary<string, int[]>();
+    public string Filename = "";
     public string HTML = "";
     public string Section = ""; //section of the template to use for rendering
 
@@ -319,6 +320,10 @@ public class View
     {
         get
         {
+            if (!data.ContainsKey(key))
+            {
+                data.Add(key, "");
+            }
             return data[key];
         }
         set
@@ -378,6 +383,7 @@ public class View
     private void Parse(string file, string section = "", string html = "", Dictionary<string, SerializedView> cache = null, bool loadPartials = true)
     {
         SerializedView cached = new SerializedView() { Elements = new List<ViewElement>() };
+        Filename = file;
         data = new ViewData();
         Section = section;
         if (file != "")
