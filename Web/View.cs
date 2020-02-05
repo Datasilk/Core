@@ -313,33 +313,33 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, string section, Dictionary<string, SerializedView> cache = null)
     {
-        Parse(file, section, "", cache);
+        Parse(file, section.ToLower(), "", cache);
     }
 
     public string this[string key]
     {
         get
         {
-            if (!data.ContainsKey(key))
+            if (!data.ContainsKey(key.ToLower()))
             {
-                data.Add(key, "");
+                data.Add(key.ToLower(), "");
             }
-            return data[key];
+            return data[key.ToLower()];
         }
         set
         {
-            data[key] = value;
+            data[key.ToLower()] = value;
         }
     }
 
     public bool ContainsKey(string key)
     {
-        return data.ContainsKey(key);
+        return data.ContainsKey(key.ToLower());
     }
 
     public void Show(string blockKey)
     {
-        data[blockKey, true] = true;
+        data[blockKey.ToLower(), true] = true;
     }
 
     /// <summary>
@@ -486,7 +486,7 @@ public class View
                         if (i > 0 && u > 0 && u < i - 2 && (s == -1 || s > u) && loadPartials == true)
                         {
                             //read partial include & load HTML from another file
-                            viewElem.Name = arr[x].Substring(0, u - 1).Trim();
+                            viewElem.Name = arr[x].Substring(0, u - 1).Trim().ToLower();
                             u2 = arr[x].IndexOf('"', u + 2);
                             var partial_path = arr[x].Substring(u + 1, u2 - u - 1);
 
@@ -574,12 +574,12 @@ public class View
                                 if (s < i && s > 0)
                                 {
                                     //found space
-                                    viewElem.Name = arr[x].Substring(0, s).Trim();
+                                    viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
                                 }
                                 else
                                 {
                                     //found tag end
-                                    viewElem.Name = arr[x].Substring(0, i).Trim();
+                                    viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
                                 }
 
                                 if (viewElem.Name.IndexOf('/') < 0)
