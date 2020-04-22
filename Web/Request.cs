@@ -50,24 +50,28 @@ namespace Datasilk.Core.Web
 
         public virtual string Error(string message = "")
         {
+            if(Context.Response.HasStarted) { return message; }
             Context.Response.StatusCode = 500;
             return message;
         }
 
         public virtual string Error404(string message = "")
         {
+            if (Context.Response.HasStarted) { return message; }
             Context.Response.StatusCode = 404;
             return message;
         }
 
         public virtual string AccessDenied(string message = "")
         {
+            if (Context.Response.HasStarted) { return message; }
             Context.Response.StatusCode = 403;
             return message;
         }
 
         public virtual string BadRequest(string message = "")
         {
+            if (Context.Response.HasStarted) { return message; }
             Context.Response.StatusCode = 400;
             return message;
         }
