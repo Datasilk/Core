@@ -258,6 +258,11 @@ public class ViewOptions
     public string Section { get; set; }
 }
 
+public static class ViewConfig
+{
+    public static string Path { get; set; }
+}
+
 public class View
 {
     public List<ViewElement> Elements;
@@ -860,9 +865,12 @@ public class View
 
     private static string MapPath(string strPath = "")
     {
-        var path = Path.GetFullPath(".").Replace("/", "/");
-        var path2 = strPath.Replace("\\", "/");
-        if (path2.Substring(0, 1) == "/") { path2 = path2.Substring(1); }
-        return Path.Combine(path, path2);
+        if (string.IsNullOrEmpty(ViewConfig.Path))
+        {
+            ViewConfig.Path = Path.GetFullPath(".");
+        } 
+        var path = strPath.Replace("\\", "/");
+        if (path.Substring(0, 1) == "/") { path = path.Substring(1); }
+        return Path.Combine(ViewConfig.Path, path);
     }
 }
