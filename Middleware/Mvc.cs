@@ -63,11 +63,17 @@ namespace Datasilk.Core.Middleware
                     }
                 }
             }
-            
-            Logger.LogInformation("Datasilk Core MVC started ({0} controllers, {1} services)",
-                controllers.Count, services.Count);
-            Console.WriteLine("Datasilk Core MVC started ({0} controllers, {1} services)",
-                controllers.Count, services.Count);
+
+            if (options.LogRequests)
+            {
+                Logger.LogInformation("Datasilk Core MVC started ({0} controllers, {1} services)",
+                    controllers.Count, services.Count);
+            }
+            if (options.WriteDebugInfoToConsole)
+            {
+                Console.WriteLine("Datasilk Core MVC started ({0} controllers, {1} services)",
+                    controllers.Count, services.Count);
+            }
         }
 
         public async Task Invoke(HttpContext context)
@@ -92,14 +98,29 @@ namespace Datasilk.Core.Middleware
             //get parameters from request body
             var parameters = await GetParameters(context);
 
-            if (options.WriteDebugInfoToConsole == true)
+            if (options.LogRequests)
             {
-                Logger.LogDebug("{0}, {1} {2} ({3}), {4} kb, # {5}",
+                Logger.LogDebug("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
                     DateTime.Now.ToString("hh:mm:ss"),
                     context.Request.Method,
                     string.IsNullOrEmpty(path) ? "/" : path,
                     Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
-                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"), requestCount);
+                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
+                    requestCount,
+                    string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
+                    context.Connection.RemoteIpAddress);
+            }
+            if (options.WriteDebugInfoToConsole)
+            {
+                Console.WriteLine("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
+                    DateTime.Now.ToString("hh:mm:ss"),
+                    context.Request.Method,
+                    string.IsNullOrEmpty(path) ? "/" : path,
+                    Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
+                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
+                    requestCount,
+                    string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
+                    context.Connection.RemoteIpAddress);
             }
 
             if (paths.Length > 1 && options.ServicePaths.Contains(paths[0]) == true)
@@ -284,7 +305,7 @@ namespace Datasilk.Core.Middleware
                     {
                         context.Response.ContentType = "text/plain";
                     }
-                    else
+                    else if(result.IndexOf("{") >= 0 && result.IndexOf("}") > 0)
                     {
                         context.Response.ContentType = "text/json";
                     }

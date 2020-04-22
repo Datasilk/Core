@@ -13,6 +13,11 @@
         public bool WriteDebugInfoToConsole { get; set; } = false;
 
         /// <summary>
+        /// If true, outputs details about each request to a logger
+        /// </summary>
+        public bool LogRequests { get; set; } = false;
+
+        /// <summary>
         /// A list of paths that is used to access Web API services. The default is: new string[] { "api" }
         /// </summary>
         public string[] ServicePaths { get; set; } = new string[] { "api" };
