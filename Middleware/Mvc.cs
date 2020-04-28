@@ -85,7 +85,7 @@ namespace Datasilk.Core.Middleware
             
             var requestStart = DateTime.Now;
             var path = CleanPath(context.Request.Path.ToString());
-            var paths = path.Split('/').ToArray();
+            var paths = path.Split('/').Where(a => a != "").ToArray();
             requestCount++;
 
             if (paths[^1].IndexOf(".") > 0)
