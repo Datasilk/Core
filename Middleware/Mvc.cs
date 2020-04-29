@@ -88,7 +88,7 @@ namespace Datasilk.Core.Middleware
             var paths = path.Split('/').Where(a => a != "").ToArray();
             requestCount++;
 
-            if (paths[^1].IndexOf(".") > 0)
+            if (paths.Length > 0 && paths[^1].IndexOf(".") > 0)
             {
                 //do not process files, but instead return a 404 error
                 context.Response.StatusCode = 404;
