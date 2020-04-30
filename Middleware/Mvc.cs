@@ -92,49 +92,51 @@ namespace Datasilk.Core.Middleware
             {
                 //do not process files, but instead return a 404 error
                 context.Response.StatusCode = 404;
-                return;
-            }
-
-            //get parameters from request body
-            var parameters = await GetParameters(context);
-
-            if (options.LogRequests)
-            {
-                Logger.LogDebug("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
-                    DateTime.Now.ToString("hh:mm:ss"),
-                    context.Request.Method,
-                    string.IsNullOrEmpty(path) ? "/" : path,
-                    Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
-                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
-                    requestCount,
-                    string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
-                    context.Connection.RemoteIpAddress);
-            }
-            if (options.WriteDebugInfoToConsole)
-            {
-                Console.WriteLine("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
-                    DateTime.Now.ToString("hh:mm:ss"),
-                    context.Request.Method,
-                    string.IsNullOrEmpty(path) ? "/" : path,
-                    Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
-                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
-                    requestCount,
-                    string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
-                    context.Connection.RemoteIpAddress);
-            }
-
-            if (paths.Length > 1 && options.ServicePaths.Contains(paths[0]) == true)
-            {
-                //handle web API requests
-                ProcessService(context, path, paths, parameters);
+                await _next.Invoke(context);
             }
             else
             {
-                //handle controller requests
-                ProcessController(context, path, paths, parameters);
-            }
+                //get parameters from request body
+                var parameters = await GetParameters(context);
 
-            //await _next.Invoke(context);
+                if (options.LogRequests)
+                {
+                    Logger.LogDebug("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
+                        DateTime.Now.ToString("hh:mm:ss"),
+                        context.Request.Method,
+                        string.IsNullOrEmpty(path) ? "/" : path,
+                        Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
+                        ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
+                        requestCount,
+                        string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
+                        context.Connection.RemoteIpAddress);
+                }
+                if (options.WriteDebugInfoToConsole)
+                {
+                    Console.WriteLine("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
+                        DateTime.Now.ToString("hh:mm:ss"),
+                        context.Request.Method,
+                        string.IsNullOrEmpty(path) ? "/" : path,
+                        Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
+                        ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
+                        requestCount,
+                        string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
+                        context.Connection.RemoteIpAddress);
+                }
+
+                if (paths.Length > 1 && options.ServicePaths.Contains(paths[0]) == true)
+                {
+                    //handle web API requests
+                    ProcessService(context, path, paths, parameters);
+                }
+                else
+                {
+                    //handle controller requests
+                    ProcessController(context, path, paths, parameters);
+                }
+                await _next.Invoke(context);
+            }
+            
         }
 
         private void ProcessController(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)
