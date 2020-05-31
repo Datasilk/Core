@@ -312,7 +312,7 @@ namespace Datasilk.Core.Middleware
                         context.Response.ContentType = "text/json";
                     }
                 }
-                context.Response.ContentLength = result.Length;
+                //context.Response.ContentLength = result.Length;
                 if (result != null)
                 {
                     context.Response.WriteAsync(result);
