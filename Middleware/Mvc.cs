@@ -351,7 +351,14 @@ namespace Datasilk.Core.Middleware
         {
             var parameters = new Web.Parameters();
             string data = "";
-            if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
+            if(context.Request.ContentType == "application/x-www-form-urlencoded" && context.Request.Body.CanRead && context.Request.Form.Keys.Count > 0)
+            {
+                foreach(var item in context.Request.Form)
+                {
+                    parameters.Add(item.Key, item.Value);
+                }
+            }
+            else if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
             {
                 //get POST data from request
                 byte[] bytes = new byte[0];
