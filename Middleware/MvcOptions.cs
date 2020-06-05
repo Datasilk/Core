@@ -36,5 +36,10 @@
         /// Set the default service method to load if the request URI path is empty
         /// </summary>
         public string DefaultServiceMethod { get; set; } = "Get";
+
+        /// <summary>
+        /// Determines if the Middleware will invoke the next middleware in the pipeline
+        /// </summary>
+        public bool InvokeNext { get; set; } = true;
     }
 }

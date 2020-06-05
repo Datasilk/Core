@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.IO;
+using System.Collections.Generic;
 
 namespace Datasilk.Core.Web
 {
@@ -11,8 +12,8 @@ namespace Datasilk.Core.Web
         /// Raw data extracted from the request body before deserialized into parameters
         /// </summary>
         public string RequestBody { get; set; } = "";
+        public Dictionary<string, FormFile> Files = new Dictionary<string, FormFile>();
         private List<string> _isArray = new List<string>();
-
 
         /// <summary>
         /// Adds a value (comma-delimited) to an existing key/value pair
@@ -45,6 +46,12 @@ namespace Datasilk.Core.Web
         {
             return this[key].Split("^,^");
         }
+    }
+
+    public class FormFile: MemoryStream
+    {
+        public string Filename { get; set; }
+        public string ContentType { get; set; }
     }
 }
 

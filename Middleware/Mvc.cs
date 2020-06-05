@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Web;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -92,7 +94,7 @@ namespace Datasilk.Core.Middleware
             {
                 //do not process files, but instead return a 404 error
                 context.Response.StatusCode = 404;
-                await _next.Invoke(context);
+                if (options.InvokeNext) { await _next.Invoke(context); }
             }
             else
             {
@@ -134,7 +136,7 @@ namespace Datasilk.Core.Middleware
                     //handle controller requests
                     ProcessController(context, path, paths, parameters);
                 }
-                await _next.Invoke(context);
+                if (options.InvokeNext) { await _next.Invoke(context); }
             }
             
         }
@@ -353,12 +355,9 @@ namespace Datasilk.Core.Middleware
         {
             var parameters = new Web.Parameters();
             string data = "";
-            if(context.Request.ContentType == "application/x-www-form-urlencoded" && context.Request.Body.CanRead && context.Request.Form.Keys.Count > 0)
+            if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") >= 0)
             {
-                foreach(var item in context.Request.Form)
-                {
-                    parameters.Add(item.Key, item.Value);
-                }
+                GetMultipartParameters(context, parameters, Encoding.UTF8);
             }
             else if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
             {
@@ -381,14 +380,27 @@ namespace Datasilk.Core.Middleware
                     Dictionary<string, object> attr = JsonSerializer.Deserialize<Dictionary<string, object>>(data);
                     foreach (KeyValuePair<string, object> item in attr)
                     {
+                        var key = item.Key.ToLower();
+                        if (parameters.ContainsKey(key))
+                        {
+                            parameters.Remove(parameters[key]);
+                        }
                         if (item.Value != null)
                         {
-                            parameters.Add(item.Key.ToLower(), item.Value.ToString());
+                            parameters.Add(key, item.Value.ToString());
                         }
                         else
                         {
-                            parameters.Add(item.Key.ToLower(), "");
+                            parameters.Add(key, "");
                         }
+                    }
+                }else if(context.Request.ContentType != null && context.Request.ContentType.IndexOf("application/x-www-form-urlencoded") >= 0)
+                {
+                    var kvps = data.Split("&");
+                    foreach(var kv in kvps)
+                    {
+                        var kvp = kv.Split("=");
+                        parameters.Add(kvp[0], kvp.Length > 1 ? kvp[1] : "");
                     }
                 }
             }
@@ -409,7 +421,84 @@ namespace Datasilk.Core.Middleware
             return parameters;
         }
 
-        private object[] MapParameters(ParameterInfo[] methodParams, Web.Parameters parameters)
+
+        private static void GetMultipartParameters(HttpContext context, Web.Parameters parameters, Encoding encoding)
+        {
+            // Read the stream into a byte array
+            byte[] data = ToByteArray(context.Request.BodyReader.AsStream());
+
+            // Copy to a string for header parsing
+            string content = encoding.GetString(data);
+
+            // The first line should contain the delimiter
+            int delimiterEndIndex = content.IndexOf("\r\n");
+
+            if (delimiterEndIndex > -1)
+            {
+                string delimiter = content.Substring(0, content.IndexOf("\r\n"));
+
+                string[] sections = content.Split(new string[] { delimiter }, StringSplitOptions.RemoveEmptyEntries);
+                var totalLength = delimiter.Length;
+
+                foreach (string s in sections)
+                {
+                    if (s.Contains("Content-Disposition"))
+                    {
+                        // If we find "Content-Disposition", this is a valid multi-part section
+                        // Now, look for the "name" parameter
+                        Match nameMatch = new Regex(@"(?<=name\=\"")(.*?)(?=\"")").Match(s);
+                        string name = nameMatch.Value.Trim().ToLower();
+                        var isFile = false;
+
+                        // Look for Content-Type
+                        Regex re = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n\r\n)");
+                        Match contentTypeMatch = re.Match(s);
+
+                        // Look for filename
+                        re = new Regex(@"(?<=filename\=\"")(.*?)(?=\"")");
+                        Match filenameMatch = re.Match(s);
+
+                        // Did we find the required values?
+                        if (contentTypeMatch.Success && filenameMatch.Success)
+                        {
+                            // Get the start & end indexes of the file contents
+                            int startIndex = totalLength + contentTypeMatch.Index + contentTypeMatch.Length + "\r\n\r\n".Length;
+
+                            byte[] delimiterBytes = encoding.GetBytes("\r\n" + delimiter);
+                            int endIndex = IndexOf(data, delimiterBytes, startIndex);
+
+                            int contentLength = endIndex - startIndex;
+
+                            // Extract the file contents from the byte array
+                            byte[] fileData = new byte[contentLength];
+                            Buffer.BlockCopy(data, startIndex, fileData, 0, contentLength);
+
+                            //create form file
+                            var formFile = new Web.FormFile()
+                            {
+                                Filename = filenameMatch.Value.Trim(),
+                                ContentType = contentTypeMatch.Value.Trim()
+                            };
+                            formFile.Write(fileData, 0, contentLength);
+
+                            //add form file to parameters Files array
+                            parameters.Files.Add(name, formFile);
+                            isFile = true;
+                        }
+                        if (!string.IsNullOrWhiteSpace(name) && isFile == false)
+                        {
+                            // Get the start & end indexes of the file contents
+                            int startIndex = nameMatch.Index + nameMatch.Length + "\r\n\r\n".Length;
+                            parameters.Add(name, HttpUtility.UrlDecode(s.Substring(startIndex).TrimEnd(new char[] { '\r', '\n' }).Trim()));
+                        }
+                    }
+                    totalLength += s.Length + delimiter.Length;
+                }
+
+            }
+        }
+
+        private static object[] MapParameters(ParameterInfo[] methodParams, Web.Parameters parameters)
         {
             var paramVals = new object[methodParams.Length];
             for (var x = 0; x < methodParams.Length; x++)
@@ -511,7 +600,7 @@ namespace Datasilk.Core.Middleware
             return paramVals;
         }
 
-        private string CleanReflectionName(string myStr)
+        private static string CleanReflectionName(string myStr)
         {
             string newStr = myStr.ToString();
             int x = 0;
@@ -534,7 +623,7 @@ namespace Datasilk.Core.Middleware
             return newStr;
         }
 
-        private bool CanUseRequestMethod(HttpContext context, MethodInfo method)
+        private static bool CanUseRequestMethod(HttpContext context, MethodInfo method)
         {
             var reqMethod = context.Request.Method.ToLower();
             var hasReqAttr = false;
@@ -560,6 +649,53 @@ namespace Datasilk.Core.Middleware
                 }
             }
             return true;
+        }
+
+        private static int IndexOf(byte[] searchWithin, byte[] serachFor, int startIndex)
+        {
+            int index = 0;
+            int startPos = Array.IndexOf(searchWithin, serachFor[0], startIndex);
+
+            if (startPos != -1)
+            {
+                while ((startPos + index) < searchWithin.Length)
+                {
+                    if (searchWithin[startPos + index] == serachFor[index])
+                    {
+                        index++;
+                        if (index == serachFor.Length)
+                        {
+                            return startPos;
+                        }
+                    }
+                    else
+                    {
+                        startPos = Array.IndexOf<byte>(searchWithin, serachFor[0], startPos + index);
+                        if (startPos == -1)
+                        {
+                            return -1;
+                        }
+                        index = 0;
+                    }
+                }
+            }
+
+            return -1;
+        }
+
+        private static byte[] ToByteArray(Stream stream)
+        {
+            byte[] buffer = new byte[32768];
+            using (MemoryStream ms = new MemoryStream())
+            {
+                while (true)
+                {
+                    int read = stream.Read(buffer, 0, buffer.Length);
+                    if (read <= 0)
+                        return ms.ToArray();
+                    ms.Write(buffer, 0, read);
+                }
+            }
         }
         #endregion
     }
