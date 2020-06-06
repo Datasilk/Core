@@ -387,7 +387,7 @@ namespace Datasilk.Core.Middleware
                         }
                         if (item.Value != null)
                         {
-                            parameters.Add(key, item.Value.ToString());
+                            parameters.Add(key, HttpUtility.UrlDecode(item.Value.ToString()));
                         }
                         else
                         {
@@ -400,7 +400,7 @@ namespace Datasilk.Core.Middleware
                     foreach(var kv in kvps)
                     {
                         var kvp = kv.Split("=");
-                        parameters.Add(kvp[0], kvp.Length > 1 ? kvp[1] : "");
+                        parameters.Add(kvp[0], kvp.Length > 1 ? HttpUtility.UrlDecode(kvp[1]) : "");
                     }
                 }
             }
@@ -411,11 +411,11 @@ namespace Datasilk.Core.Middleware
                 var value = context.Request.Query[key].ToString();
                 if (!parameters.ContainsKey(key))
                 {
-                    parameters.Add(key, value);
+                    parameters.Add(key, HttpUtility.UrlDecode(value));
                 }
                 else
                 {
-                    parameters.AddTo(key, value);
+                    parameters.AddTo(key, HttpUtility.UrlDecode(value));
                 }
             }
             return parameters;
