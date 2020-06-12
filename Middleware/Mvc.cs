@@ -588,7 +588,11 @@ namespace Datasilk.Core.Middleware
                     else
                     {
                         //convert param value to matching method parameter type
-                        paramVals[x] = JsonSerializer.Deserialize(param, paramType);
+                        try
+                        {
+                            paramVals[x] = JsonSerializer.Deserialize(param, paramType);
+                        }
+                        catch (Exception) { }
                     }
                 }
                 else
