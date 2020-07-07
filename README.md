@@ -76,7 +76,7 @@ You could create controllers that inherit other controllers, then `return base.R
 ```
 namespace MyProject.Controllers
 {
-    public class Home: Datasilk.Core.Web.Controller
+    public class Layout: Datasilk.Core.Web.Controller
     {
         public override string Render(string body = "")
 		{
