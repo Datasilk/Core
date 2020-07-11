@@ -136,7 +136,7 @@ namespace Datasilk.Core.Middleware
                     //handle controller requests
                     ProcessController(context, path, paths, parameters);
                 }
-                if (options.InvokeNext) { _next.Invoke(context); }
+                if (options.InvokeNext) { await _next.Invoke(context); }
             }
             
         }
@@ -205,7 +205,6 @@ namespace Datasilk.Core.Middleware
             {
                 context.Response.WriteAsync(html);
             }
-            context.Response.Body.Flush();
         }
 
         private void ProcessService(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)
