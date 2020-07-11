@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.AspNetCore.Http;
 
 namespace Datasilk.Core.Web
 {
@@ -6,27 +7,31 @@ namespace Datasilk.Core.Web
     {
         string Render(string body = "");
         string Redirect(string url);
-        static T LoadController<T>() where T : IController
+        static T LoadController<T>(IController parent) where T : IController
         {
             var controller = (T)Activator.CreateInstance(typeof(T));
+            controller.Context = parent.Context;
+            controller.PathParts = parent.PathParts;
+            controller.Path = parent.Path;
+            controller.Parameters = parent.Parameters;
             return controller;
 
         }
-        static string AccessDenied<T>() where T : IController
+        static string AccessDenied<T>(IController parent) where T : IController
         {
-            var controller = LoadController<T>();
+            var controller = LoadController<T>(parent);
             return controller.Render();
         }
 
-        static string Error<T>() where T : IController
+        static string Error<T>(IController parent) where T : IController
         {
-            var controller = LoadController<T>();
+            var controller = LoadController<T>(parent);
             return controller.Render();
         }
 
-        static string Error404<T>() where T : IController
+        static string Error404<T>(IController parent) where T : IController
         {
-            var controller = LoadController<T>();
+            var controller = LoadController<T>(parent);
             return controller.Render();
         }
     }
@@ -42,19 +47,19 @@ namespace Datasilk.Core.Web
         public string Error<T>() where T : IController
         {
             Context.Response.StatusCode = 500;
-            return IController.Error<T>();
+            return IController.Error<T>(this);
         }
 
         public string Error404<T>() where T : IController
         {
             Context.Response.StatusCode = 404;
-            return IController.Error404<T>();
+            return IController.Error404<T>(this);
         }
 
         public string AccessDenied<T>() where T : IController
         {
             Context.Response.StatusCode = 403;
-            return IController.AccessDenied<T>();
+            return IController.AccessDenied<T>(this);
         }
 
         public string Redirect(string url)

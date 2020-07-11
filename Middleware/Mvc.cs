@@ -136,7 +136,7 @@ namespace Datasilk.Core.Middleware
                     //handle controller requests
                     ProcessController(context, path, paths, parameters);
                 }
-                if (options.InvokeNext) { await _next.Invoke(context); }
+                if (options.InvokeNext) { _next.Invoke(context); }
             }
             
         }
@@ -179,15 +179,6 @@ namespace Datasilk.Core.Middleware
 
             if (page != null)
             {
-                //check request method
-                if (!CanUseRequestMethod(context, page.GetType().GetMethod("Render")))
-                {
-                    page = new Web.Controller();
-                    page.Init(context, parameters, path, pathParts);
-                    html = page.BadRequest("Page does not support the '" + context.Request.Method + "' request method");
-                    return;
-                }
-
                 //render page
                 page.Init(context, parameters, path, pathParts);
                 html = page.Render();
@@ -214,6 +205,7 @@ namespace Datasilk.Core.Middleware
             {
                 context.Response.WriteAsync(html);
             }
+            context.Response.Body.Flush();
         }
 
         private void ProcessService(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)
