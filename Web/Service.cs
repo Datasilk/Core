@@ -9,7 +9,7 @@ namespace Datasilk.Core.Web
         string Success();
         string Empty();
 
-        static string Inject(string selector, responseType injectType, string html, string javascript, string css)
+        static string Inject(string selector, responseType injectType, string html, string javascript = "", string css = "")
         {
             var response = new Response()
             {
@@ -30,6 +30,12 @@ namespace Datasilk.Core.Web
 
     public class Service : Request, IService
     {
+        public string JsonResponse(dynamic obj)
+        {
+            Context.Response.ContentType = "text/json";
+            return JsonSerializer.Serialize(obj);
+        }
+
         public override string AccessDenied(string message = "access denied")
         {
             Context.Response.StatusCode = 403;
@@ -55,15 +61,21 @@ namespace Datasilk.Core.Web
             return "success"; 
         }
 
-        public string Empty() { return "{}"; }
-
-        public static string Inject(string selector, responseType injectType, string html, string javascript, string css)
+        public string Empty()
         {
+            Context.Response.ContentType = "text/json";
+            return "{}"; 
+        }
+
+        public string Inject(string selector, responseType injectType, string html, string javascript, string css)
+        {
+            Context.Response.ContentType = "text/json";
             return IService.Inject(selector, injectType, html, javascript, css);
         }
 
-        public static string Inject(Response response)
+        public string Inject(Response response)
         {
+            Context.Response.ContentType = "text/json";
             return Inject(response.selector, response.type, response.html, response.javascript, response.css);
         }
 

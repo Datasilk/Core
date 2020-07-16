@@ -136,7 +136,7 @@ namespace Datasilk.Core.Middleware
                     //handle controller requests
                     ProcessController(context, path, paths, parameters);
                 }
-                if (options.InvokeNext) { await _next.Invoke(context); }
+                if (options.InvokeNext) { _next.Invoke(context); }
             }
             
         }
@@ -296,16 +296,8 @@ namespace Datasilk.Core.Middleware
             {
                 if (context.Response.ContentType == null)
                 {
-                    if (result.IndexOf("{") < 0)
-                    {
-                        context.Response.ContentType = "text/plain";
-                    }
-                    else if(result.IndexOf("{") >= 0 && result.IndexOf("}") > 0)
-                    {
-                        context.Response.ContentType = "text/json";
-                    }
+                    context.Response.ContentType = "text/plain";
                 }
-                //context.Response.ContentLength = result.Length;
                 if (result != null)
                 {
                     context.Response.WriteAsync(result);

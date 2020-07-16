@@ -62,7 +62,7 @@ namespace MyProject.Controllers
 In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Controllers.Home` class. This class loads `/Views/Home/home.html` into a `View` object and replaces the `{{title}}` & `{{description}}` variables located within the `home.html` file with the text, "Welcome!" & "I like to write software". Then, the page returns the contents of `view.Render()`.
 
 #### Controller Hierarchy
-You could create controllers that inherit other controllers, then `return base.Rennder(view.Render())` to create a cascade. This would be useful to have a base controller that renders the header & footer of a web page, while all other controllers render the body.
+You could create controllers that inherit other controllers, then `return base.Render(view.Render())` to create a cascade. This would be useful to have a base controller that renders the header & footer of a web page, while all other controllers render the body.
 
 **/Views/Shared/layout.html**
 ```
@@ -110,7 +110,7 @@ In the example above, the `Home` controller inherits from the `Layout` controlle
 > NOTE: `MyProject.Controllers.Home` is the default class that is instantiated if the URL contains a domain name with no path structure. 
 
 ### Controller Routing
-To render web Controllers based on complex URL paths, the MVC framework relies heavily on the first part of the request path to determine which class to instantiate. For example, if the user accesses the URL `http://localhost:7770/blog/2019/11/09/Progress-Report`, Datasilk Core MVC initializes the `MyProject.Controllers.Blog` class. 
+To render Controllers based on complex URL paths, the MVC framework relies heavily on the first part of the request path to determine which class to instantiate. For example, if the user accesses the URL `http://localhost:7770/blog/2019/11/09/Progress-Report`, Datasilk Core MVC initializes the `MyProject.Controllers.Blog` class. 
 
 The request path is split up into an array and passed into the `PathParts` field within the `Datasilk.Core.Web.Controller` class. The `PathParts` array is used to determine what type of content to load for the user. If we're loading a blog post like the above example, we can check the `PathParts` array to find year, month, and day, followed by the title of the blog post, and determine which blog post to load.
 
@@ -122,16 +122,18 @@ namespace MyProject.Controllers
         public override string Render(string body = "")
 		{
 			if(PathParts.length > 1){
-				//render blog entry
+				//get blog entry
 				var date = new Date(PathParts[1] + "/" + PathParts[2] + "/" + PathParts[3]);
 				var title = PathParts[3] || "";
 				var view = new View("/Views/Blog/entry.html");
 				//get blog entry from database using date & title
+				var entry = Blog.GetEntry(date, title);
+				view.Bind(entry);
 				return view.Render();
 			}
 			else
 			{
-				//render blog home page
+				//get blog home page
 				var view = new View("/Views/Blog/blog.html");
 				return view.Render();
 			}           
@@ -142,9 +144,9 @@ namespace MyProject.Controllers
 ### Access Denied
 If your web page is protected behind security and must display an `Access Denied` page, you can use: 
 
-```return AccessDenied<IController>()```
+```return AccessDenied<Login>(this)```
 
- from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `403`.
+ from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `403`. The above example renders the Login controller.
 
 ## Web Services
 The Datasilk Core MVC framework comes with the ability to call *RESTful* web APIs. All web API calls are executed from `Datasilk.Core.Web.IService` interfaces.
@@ -175,12 +177,10 @@ namespace MyProject.Services
 In the example above, the user would send an `AJAX` `POST` via JavaScript to the Uri `/api/User/Authenticate` to authenticate their email & password. The data sent to the server would be formatted using the JavaScript function, `JSON.stringify({email:myemail, password:mypass})`, and the data properties would be mapped to C# method arguments.
 
 ### Web Service Response
-All `Datasilk.Core.Web.Service` methods should return a string. You can easily return a JSON object as well.
+All `Datasilk.Core.Web.Service` methods should return a string. You can easily return a JSON object as well. Use the built-in method `JsonResponse(dynamic)` to ensure that the ContentType for your response is set to `text/json`.
 
 ```
-using System.Text.Json;
-...
-return JsonSerializer.Serialize(obj);
+return JsonResponse(obj);
 ```
 
 ## Routes.cs
@@ -221,3 +221,32 @@ By routing new class instances using the `new` keyword, you bypass the last reso
 
 ## Optional: Datasilk Core Javascript Library
 Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains various client-side features used to build a modern web application. The library includes features such as message alert boxes, popup modals, drag & drop functionality, HTML templating, and custom scrollbars.
+
+### Client-Side Content Injection
+Using the Datasilk Core JS library, you can process AJAX calls that modify the web page. For example, the following Javascript will inject content from the Datasilk Service onto the web page:
+
+```javascript
+S.ajax.post('Members/GetList', {userId:userId}, S.ajax.inject, null, true);
+```
+
+Calling `S.ajax.post` above will process the response using the `S.ajax.inject` method. Make sure to include the fifth argument `true` to parse the response as JSON.
+
+Then, the Datasilk Service method `Members.GetList` would return the JSON object using the built-in method `Inject(string, ResponseType, string, string, string)`.
+
+```csharp
+namespace MyProject.Services
+{
+    public class Members: Datasilk.Core.Web.Service
+    {
+		[POST]
+		public string GetList(string userId)
+		{
+			//return list of members associated with user ID
+			//...
+			return Inject('.member-list > ul', ResponseType.replace, view.Render(), 'updateMemberCount(' + members.Length + ')');
+		}
+	}
+}
+```
+
+The Service above returns the JSON object that defines the CSS selector to inject HTML content into, how to inject the content (in this case, we will replace existing content), the rendered view (as HTML), and also a Javascript method to call once the content is injected.
