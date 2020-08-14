@@ -136,7 +136,7 @@ namespace Datasilk.Core.Middleware
                     //handle controller requests
                     ProcessController(context, path, paths, parameters);
                 }
-                if (options.InvokeNext) { _next.Invoke(context); }
+                if (options.InvokeNext) { await _next.Invoke(context); }
             }
             
         }
@@ -296,8 +296,16 @@ namespace Datasilk.Core.Middleware
             {
                 if (context.Response.ContentType == null)
                 {
-                    context.Response.ContentType = "text/plain";
+                    if (result.IndexOf("{") < 0)
+                    {
+                        context.Response.ContentType = "text/plain";
+                    }
+                    else if(result.IndexOf("{") >= 0 && result.IndexOf("}") > 0)
+                    {
+                        context.Response.ContentType = "text/json";
+                    }
                 }
+                //context.Response.ContentLength = result.Length;
                 if (result != null)
                 {
                     context.Response.WriteAsync(result);
@@ -336,13 +344,27 @@ namespace Datasilk.Core.Middleware
 
         private async static Task<Web.Parameters> GetParameters(HttpContext context)
         {
+            var contentType = context.Request.ContentType;
             var parameters = new Web.Parameters();
             string data = "";
-            if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") >= 0)
+            if (contentType != null && contentType.IndexOf("multipart/form-data") >= 0)
             {
                 GetMultipartParameters(context, parameters, Encoding.UTF8);
             }
-            else if (context.Request.ContentType != null && context.Request.ContentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
+            else if (context.Request.ContentType == "application/octet-stream")
+            {
+                //file uploaded via HTML 5 ajax or similar method
+                var filename = context.Request.Headers["X-File-Name"].ToString();
+                var formFile = new Web.FormFile()
+                {
+                    Filename = filename,
+                    ContentType = contentType
+                };
+                await context.Request.Body.CopyToAsync(formFile);
+                formFile.Seek(0, SeekOrigin.Begin);
+                parameters.Files.Add(filename, formFile);
+            }
+            else if (contentType != null && contentType.IndexOf("multipart/form-data") < 0 && context.Request.Body.CanRead)
             {
                 //get POST data from request
                 byte[] bytes = new byte[0];
@@ -353,6 +375,7 @@ namespace Datasilk.Core.Middleware
                 }
                 data = Encoding.UTF8.GetString(bytes, 0, bytes.Length).Trim();
             }
+            
 
             if (data.Length > 0)
             {
@@ -377,7 +400,7 @@ namespace Datasilk.Core.Middleware
                             parameters.Add(key, "");
                         }
                     }
-                }else if(context.Request.ContentType != null && context.Request.ContentType.IndexOf("application/x-www-form-urlencoded") >= 0)
+                }else if(contentType != null && contentType.IndexOf("application/x-www-form-urlencoded") >= 0)
                 {
                     var kvps = data.Split("&");
                     foreach(var kv in kvps)
