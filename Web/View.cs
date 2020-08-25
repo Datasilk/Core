@@ -348,6 +348,14 @@ public class View
     }
 
     /// <summary>
+    /// Clears any bound data, which is useful when reusing the same View object in a loop
+    /// </summary>
+    public void Clear()
+    {
+        data = new ViewData();
+    }
+
+    /// <summary>
     /// Binds an object to the view template. Use e.g. {{myprop}} or {{myobj.myprop}} to represent object fields & properties in template
     /// </summary>
     /// <param name="obj"></param>
