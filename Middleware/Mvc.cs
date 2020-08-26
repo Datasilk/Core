@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Web;
+using System.Net;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -386,7 +387,7 @@ namespace Datasilk.Core.Middleware
                     Dictionary<string, object> attr = JsonSerializer.Deserialize<Dictionary<string, object>>(data);
                     foreach (KeyValuePair<string, object> item in attr)
                     {
-                        var key = item.Key.ToLower();
+                        var key = WebUtility.UrlDecode(item.Key.ToLower());
                         if (parameters.ContainsKey(key))
                         {
                             parameters.Remove(parameters[key]);
