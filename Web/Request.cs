@@ -1,10 +1,11 @@
 ﻿using System.Text;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
+using System;
 
 namespace Datasilk.Core.Web
 {
-    public interface IRequest
+    public interface IRequest : IDisposable
     {
         HttpContext Context { get; set; }
         string Path { get; set; }
@@ -14,7 +15,6 @@ namespace Datasilk.Core.Web
         StringBuilder Css { get; set; }
 
         void Init(HttpContext context, Parameters parameters, string path, string[] pathParts);
-        void Unload() { }
         bool CheckSecurity();
         string Error(string message = "");
         string Error404(string message = "");
@@ -40,8 +40,6 @@ namespace Datasilk.Core.Web
             Path = path;
             PathParts = pathParts;
         }
-
-        public virtual void Unload(){}
 
         public virtual bool CheckSecurity()
         {
@@ -79,6 +77,8 @@ namespace Datasilk.Core.Web
         public virtual void AddScript(string url, string id = "", string callback = "") { }
 
         public virtual void AddCSS(string url, string id = "") { }
+
+        public virtual void Dispose(){}
     }
 }
 

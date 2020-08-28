@@ -193,7 +193,7 @@ namespace Datasilk.Core.Middleware
             }
 
             //unload Datasilk Core
-            page.Unload();
+            page.Dispose();
             page = null;
 
             //send response back to client
@@ -292,6 +292,7 @@ namespace Datasilk.Core.Middleware
 
             //execute service method
             string result = (string)method.Invoke(service, paramVals);
+            service.Dispose();
 
             if (context.Response.HasStarted == false)
             {
@@ -316,7 +317,6 @@ namespace Datasilk.Core.Middleware
                     context.Response.WriteAsync("{}");
                 }
             }
-            service.Unload();
         }
 
         #region "Helpers"
