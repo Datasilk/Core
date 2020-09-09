@@ -29,6 +29,19 @@ public struct ViewElement
 public static class ViewCache
 {
     public static Dictionary<string, SerializedView> cache { get; set; } = new Dictionary<string, SerializedView>();
+
+    public static void Remove(string file, string section = "")
+    {
+        if (cache.ContainsKey(file + '/' + section) == true)
+        {
+            cache.Remove(file + '/' + section);
+        }
+    }
+
+    public static void Clear()
+    {
+        cache.Clear();
+    }
 }
 
 public class ViewChild
