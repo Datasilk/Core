@@ -381,7 +381,9 @@ namespace Datasilk.Core.Middleware
             if (data.Length > 0)
             {
                 parameters.RequestBody = data;
-                if (data.IndexOf("Content-Disposition") < 0 && data.IndexOf("{") >= 0 && data.IndexOf("}") > 0 && data.IndexOf(":") > 0)
+                if (data.IndexOf("Content-Disposition") < 0 && (
+                    (data.IndexOf("{") == 0 || data.IndexOf("[") == 0) && data.IndexOf(":") > 0)
+                )
                 {
                     //get method parameters from POST
                     Dictionary<string, object> attr = JsonSerializer.Deserialize<Dictionary<string, object>>(data);
@@ -394,7 +396,7 @@ namespace Datasilk.Core.Middleware
                         }
                         if (item.Value != null)
                         {
-                            parameters.Add(key, HttpUtility.UrlDecode(item.Value.ToString()));
+                            parameters.Add(key, item.Value.ToString());
                         }
                         else
                         {
@@ -431,53 +433,44 @@ namespace Datasilk.Core.Middleware
 
         private static void GetMultipartParameters(HttpContext context, Web.Parameters parameters, Encoding encoding)
         {
-            // Read the stream into a byte array
-            byte[] data = ToByteArray(context.Request.BodyReader.AsStream());
-
-            // Copy to a string for header parsing
-            string content = encoding.GetString(data);
-
-            // The first line should contain the delimiter
+            var data = ToByteArray(context.Request.BodyReader.AsStream());
+            var content = encoding.GetString(data);
             int delimiterEndIndex = content.IndexOf("\r\n");
 
             if (delimiterEndIndex > -1)
             {
-                string delimiter = content.Substring(0, content.IndexOf("\r\n"));
-
-                string[] sections = content.Split(new string[] { delimiter }, StringSplitOptions.RemoveEmptyEntries);
+                var delimiter = content.Substring(0, content.IndexOf("\r\n"));
+                var sections = content.Split(new string[] { delimiter }, StringSplitOptions.RemoveEmptyEntries);
+                var delimiterBytes = encoding.GetBytes("\r\n" + delimiter);
                 var totalLength = delimiter.Length;
 
                 foreach (string s in sections)
                 {
+                    // if we find "Content-Disposition", this is a valid multi-part section
                     if (s.Contains("Content-Disposition"))
                     {
-                        // If we find "Content-Disposition", this is a valid multi-part section
-                        // Now, look for the "name" parameter
+                        // look for the "name" parameter
                         Match nameMatch = new Regex(@"(?<=name\=\"")(.*?)(?=\"")").Match(s);
                         string name = nameMatch.Value.Trim().ToLower();
-                        var isFile = false;
 
-                        // Look for Content-Type
+                        // look for Content-Type
                         Regex re = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n\r\n)");
                         Match contentTypeMatch = re.Match(s);
 
-                        // Look for filename
+                        // look for filename
                         re = new Regex(@"(?<=filename\=\"")(.*?)(?=\"")");
                         Match filenameMatch = re.Match(s);
 
-                        // Did we find the required values?
+                        // did we find the required values?
                         if (contentTypeMatch.Success && filenameMatch.Success)
                         {
-                            // Get the start & end indexes of the file contents
-                            int startIndex = totalLength + contentTypeMatch.Index + contentTypeMatch.Length + "\r\n\r\n".Length;
+                            // get the start & end indexes of the file contents
+                            var startIndex = totalLength + contentTypeMatch.Index + contentTypeMatch.Length + 4; // "\r\n\r\n".Length;
+                            var endIndex = IndexOf(data, delimiterBytes, startIndex);
+                            var contentLength = endIndex - startIndex;
 
-                            byte[] delimiterBytes = encoding.GetBytes("\r\n" + delimiter);
-                            int endIndex = IndexOf(data, delimiterBytes, startIndex);
-
-                            int contentLength = endIndex - startIndex;
-
-                            // Extract the file contents from the byte array
-                            byte[] fileData = new byte[contentLength];
+                            // extract the file contents from the byte array
+                            var fileData = new byte[contentLength];
                             Buffer.BlockCopy(data, startIndex, fileData, 0, contentLength);
 
                             //create form file
@@ -487,19 +480,20 @@ namespace Datasilk.Core.Middleware
                                 ContentType = contentTypeMatch.Value.Trim()
                             };
                             formFile.Write(fileData, 0, contentLength);
+                            formFile.Seek(0, SeekOrigin.Begin);
 
-                            //add form file to parameters Files array
+                            //add form file to Files list
                             parameters.Files.Add(name, formFile);
-                            isFile = true;
-                        }
-                        if (!string.IsNullOrWhiteSpace(name) && isFile == false)
+                            totalLength = endIndex + delimiterBytes.Length;
+                        } 
+                        else if (!string.IsNullOrWhiteSpace(name))
                         {
                             // Get the start & end indexes of the file contents
-                            int startIndex = nameMatch.Index + nameMatch.Length + "\r\n\r\n".Length;
+                            int startIndex = nameMatch.Index + nameMatch.Length + 4; // "\r\n\r\n".Length;
                             parameters.Add(name, HttpUtility.UrlDecode(s.Substring(startIndex).TrimEnd(new char[] { '\r', '\n' }).Trim()));
+                            totalLength += s.Length + delimiter.Length;
                         }
                     }
-                    totalLength += s.Length + delimiter.Length;
                 }
 
             }
