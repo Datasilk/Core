@@ -27,6 +27,16 @@ namespace Datasilk.Core.Middleware
         private Dictionary<string, string> controllerNamespaces = new Dictionary<string, string>();
         private Dictionary<string, string> serviceNamespaces = new Dictionary<string, string>();
 
+        private string[] phishingPaths = new string[] {
+            "phpmyadmin/", "webfig/", ".env", "config/getuser", "app", "shell", "boaform/admin/formLogin",
+            "api/jsonws/invoke", "solr/", "CFIDE/administrator/", "latest/meta-data/", "solr/admin/info/system"
+        };
+
+        private string[] phishingParamKeys = new string[]
+        {
+            "XDEBUG_SESSION_START"
+        };
+
         public Mvc(RequestDelegate next, MvcOptions options, ILoggerFactory loggerFactory)
         {
             _next = next;
@@ -88,6 +98,13 @@ namespace Datasilk.Core.Middleware
             
             var requestStart = DateTime.Now;
             var path = CleanPath(context.Request.Path.ToString());
+
+            //trap phishing requests that contain specific path values
+            if (phishingPaths.Contains(path)) {
+                context.Response.StatusCode = 500;
+                if (options.InvokeNext) { await _next.Invoke(context); }
+            }
+
             var paths = path.Split('/').Where(a => a != "").ToArray();
             requestCount++;
 
@@ -101,6 +118,13 @@ namespace Datasilk.Core.Middleware
             {
                 //get parameters from request body
                 var parameters = await GetParameters(context);
+
+                //trap phishing requests that contain specific parameter keys
+                if(phishingParamKeys.Any(a => parameters.Any(b => b.Key == a)))
+                {
+                    context.Response.StatusCode = 500;
+                    if (options.InvokeNext) { await _next.Invoke(context); }
+                }
 
                 if (options.LogRequests)
                 {
