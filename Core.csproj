@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-    <Version>1.0.1</Version>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Version>1.0.3</Version>
     <RootNamespace>Datasilk.Core</RootNamespace>
     <PackageId>Datasilk.Core.Mvc</PackageId>
     <Authors>Mark Entingh</Authors>
@@ -16,10 +16,10 @@
     <RepositoryUrl>https://github.com/datasilk/core</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>MVC, Web API, lightweight</PackageTags>
-    <PackageReleaseNotes>This is the first official release of Datasilk Core MVC. After using this MVC framework in various projects over the past 3 years, I've made the effort to publish a stable release to Nuget.</PackageReleaseNotes>
+    <PackageReleaseNotes>I've been making changes to the MVC framework based on various circumstances that I've run into, especially around handling multi-part form data &amp; other types of request data.</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 
