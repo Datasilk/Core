@@ -2,13 +2,11 @@
 
 # Datasilk Core MVC
 #### An MVC Framework for ASP.NET Core
-Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC 5 that supports HTML scaffolding and simple web services.
-
-Instead of managing a complex ASP.NET Core web application and all of its configuration, simply include this framework within your own ASP.NET Core Web Application project and start building your website!
+Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it supports Views using HTML with mustache variables, hierarchical Controller rendering, and RESTful web services.
 
 ## Startup.cs
 
-Make sure to include the middelware within your `Startup` class `Configure` method.
+Make sure to include the middleware within `Startup.cs`.
 
 ```
 app.UseDatasilkMvc(new MvcOptions()
@@ -24,7 +22,7 @@ app.UseDatasilkMvc(new MvcOptions()
 All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.IController` interface. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`.
 
 **/Views/Home/home.html**
-```
+``` html
 <div class="hero">
 	<h1>{{title}}</h1>
 	<h3>{{description}}</h3>
@@ -32,7 +30,7 @@ All page request URLs are mapped to controllers that inherit the `Datasilk.Core.
 ```
 
 **/Controllers/Home.cs**
-```
+``` c-sharp
 namespace MyProject.Controllers
 {
     public class Home: Datasilk.Core.Web.Controller
@@ -55,7 +53,7 @@ The Datasilk Core MVC framework comes with the ability to call *RESTful* web API
 
 #### Example
 
-```
+``` c-sharp
 namespace MyProject.Services
 {
     public class User: Datasilk.Core.Web.Service
