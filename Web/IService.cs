@@ -2,6 +2,7 @@
 {
     public interface IService : IRequest
     {
+        void Init();
         string Success();
         string Empty();
         string AccessDenied(string message = "Error 403");

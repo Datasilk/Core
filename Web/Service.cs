@@ -5,6 +5,8 @@ namespace Datasilk.Core.Web
 {
     public class Service : Request, IService
     {
+        public virtual void Init() { }
+
         public string JsonResponse(dynamic obj)
         {
             Context.Response.ContentType = "text/json";

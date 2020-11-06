@@ -312,6 +312,7 @@ namespace Datasilk.Core.Middleware
             service.Parameters = parameters;
             service.Path = path;
             service.PathParts = pathParts;
+            service.Init();
 
             //get class method from service type
             MethodInfo method = type.GetMethod(methodName);
