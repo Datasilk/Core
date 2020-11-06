@@ -2,9 +2,7 @@
 
 # Datasilk Core MVC
 #### An MVC Framework for ASP.NET Core
-Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC 5 that supports HTML scaffolding and simple web services.
-
-Instead of managing a complex ASP.NET Core web application and all of its configuration, simply include this framework within your own ASP.NET Core Web Application project and start building your website!
+Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it supports Views using HTML with mustache variables, hierarchial Controller rendering, and RESTful web services.
 
 ## Installation
 
@@ -23,7 +21,12 @@ public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 	{
 		IgnoreRequestBodySize = true,
 		WriteDebugInfoToConsole = true,
-		Routes = new Routes()
+		LogRequests = false,
+		Routes = new Routes(),
+		ServicePaths = new string[] { 'api' },
+		DefaultController = 'home',
+		DefaultServiceMethod = 'Get',
+		InvokeNext = true
 	});
 }
 ```

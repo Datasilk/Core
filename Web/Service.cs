@@ -1,33 +1,8 @@
-using System;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 
 namespace Datasilk.Core.Web
 {
-    public interface IService: IRequest
-    {
-        string Success();
-        string Empty();
-
-        static string Inject(string selector, responseType injectType, string html, string javascript = "", string css = "")
-        {
-            var response = new Response()
-            {
-                type = injectType,
-                selector = selector,
-                html = html,
-                javascript = javascript,
-                css = css
-            };
-            return "{\"d\":" + JsonSerializer.Serialize(response) + "}";
-        }
-        
-        static string Inject(Response response)
-        {
-            return Inject(response.selector, response.type, response.html, response.javascript, response.css);
-        }
-    }
-
     public class Service : Request, IService
     {
         public string JsonResponse(dynamic obj)
@@ -36,21 +11,21 @@ namespace Datasilk.Core.Web
             return JsonSerializer.Serialize(obj);
         }
 
-        public override string AccessDenied(string message = "access denied")
+        public string AccessDenied(string message = "Error 403")
         {
             Context.Response.StatusCode = 403;
             Context.Response.WriteAsync(message);
             return message;
         }
 
-        public override string Error(string message = "")
+        public string Error(string message = "Error 500")
         {
             Context.Response.StatusCode = 500;
             Context.Response.WriteAsync(message);
             return message;
         }
 
-        public override string BadRequest(string message = "")
+        public string BadRequest(string message = "Bad Request 400")
         {
             Context.Response.StatusCode = 400;
             return "Bad Request";
@@ -65,37 +40,6 @@ namespace Datasilk.Core.Web
         {
             Context.Response.ContentType = "text/json";
             return "{}"; 
-        }
-
-        public string Inject(string selector, responseType injectType, string html, string javascript, string css)
-        {
-            Context.Response.ContentType = "text/json";
-            return IService.Inject(selector, injectType, html, javascript, css);
-        }
-
-        public string Inject(Response response)
-        {
-            Context.Response.ContentType = "text/json";
-            return Inject(response.selector, response.type, response.html, response.javascript, response.css);
-        }
-
-        public override void AddScript(string url, string id = "", string callback = "")
-        {
-            if (ContainsResource(url)) { return; }
-            Scripts.Append("S.util.js.load('" + url + "', '" + (id != "" ? " id=\"" + id + "\"" : "js_" + (new Random(99999)).Next().ToString()) + "'" + (callback != "" ? "," + callback : "") + ");");
-        }
-
-        public override void AddCSS(string url, string id = "")
-        {
-            if (ContainsResource(url)) { return; }
-            Scripts.Append("S.util.css.load('" + url + "', '" + (id != "" ? " id=\"" + id + "\"" : "css_" + (new Random(99999)).Next().ToString()) + "');");
-        }
-
-        public bool ContainsResource(string url)
-        {
-            if (Resources.Contains(url)) { return true; }
-            Resources.Add(url);
-            return false;
         }
     }
 }
