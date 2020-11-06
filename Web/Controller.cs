@@ -20,6 +20,12 @@ namespace Datasilk.Core.Web
             return IController.Error<T>(this);
         }
 
+        public string Error(string message = "Error 500")
+        {
+            Context.Response.StatusCode = 500;
+            return message;
+        }
+
         public string Error404<T>() where T : IController
         {
             Context.Response.StatusCode = 404;

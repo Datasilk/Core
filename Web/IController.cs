@@ -12,6 +12,7 @@ namespace Datasilk.Core.Web
         string Redirect(string url);
 
         string Error<T>() where T : IController;
+        string Error(string message = "Error 500");
         string Error404<T>() where T : IController;
         string Error404(string message = "Error 404");
         string AccessDenied<T>() where T : IController;
