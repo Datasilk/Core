@@ -8,7 +8,7 @@ Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it
 
 Make sure to include the middleware within `Startup.cs`.
 
-```
+``` c-sharp
 app.UseDatasilkMvc(new MvcOptions()
 {
 	IgnoreRequestBodySize = true,
