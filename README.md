@@ -18,7 +18,7 @@ Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it
 
 Make sure to include the middleware within `Startup.cs`.
 
-``` c-sharp
+``` csharp
 public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 {
 	app.UseDatasilkMvc(new MvcOptions()
@@ -40,7 +40,7 @@ public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.IController` interface. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`. Each controller contains one method, `Render`, which is used to serve a web page to the user's web browser.
 
 **/Views/Home/home.html**
-``` c-sharp
+``` csharp
 <div class="hero">
 	<h1>{{title}}</h1>
 	<h3>{{description}}</h3>
@@ -48,7 +48,7 @@ All page request URLs are mapped to controllers that inherit the `Datasilk.Core.
 ```
 
 **/Controllers/Home.cs**
-``` c-sharp
+``` csharp
 namespace MyProject.Controllers
 {
     public class Home: Datasilk.Core.Web.Controller
@@ -80,7 +80,7 @@ You could create controllers that inherit other controllers, then `return base.R
 ```
 
 **/Controllers/Layout.cs**
-``` c-sharp
+``` csharp
 namespace MyProject.Controllers
 {
     public class Layout: Datasilk.Core.Web.Controller
@@ -97,7 +97,7 @@ namespace MyProject.Controllers
 ```
 
 **/Controllers/Home.cs**
-``` c-sharp
+``` csharp
 namespace MyProject.Controllers
 {
     public class Home: Layout
@@ -121,7 +121,7 @@ To render Controllers based on complex URL paths, the MVC framework relies heavi
 
 The request path is split up into an array and passed into the `PathParts` field within the `Datasilk.Core.Web.Controller` class. The `PathParts` array is used to determine what type of content to load for the user. If we're loading a blog post like the above example, we can check the `PathParts` array to find year, month, and day, followed by the title of the blog post, and determine which blog post to load.
 
-``` c-sharp
+``` csharp
 namespace MyProject.Controllers
 {
     public class Blog: Datasilk.Core.Web.Controller
@@ -151,7 +151,7 @@ namespace MyProject.Controllers
 ### Access Denied
 If your web page is protected behind security and must display an `Access Denied` page, you can use: 
 
-``` c-sharp
+``` csharp
 return AccessDenied<Login>(this)
 ```
 
@@ -160,7 +160,7 @@ return AccessDenied<Login>(this)
 ### 500 Error
 If your controller experiences an error, you can show another controller: 
 
-``` c-sharp
+``` csharp
 return Error<BrokenPage>(this)
 ```
 
@@ -169,7 +169,7 @@ return Error<BrokenPage>(this)
 ### 404 Error
 If your controller processes an unknown request path, you could show a 404 not found error:
 
-``` c-sharp
+``` csharp
 return Error404<NotFound>(this)
 ```
 
@@ -180,7 +180,7 @@ The Datasilk Core MVC framework comes with the ability to call *RESTful* web API
 
 #### Example
 
-``` c-sharp
+``` csharp
 namespace MyProject.Services
 {
     public class User: Datasilk.Core.Web.Service
@@ -205,14 +205,14 @@ In the example above, the user would send an `AJAX` `POST` via JavaScript to the
 ### Web Service Response
 All `Datasilk.Core.Web.Service` methods should return a string. You can easily return a JSON object as well. Use the built-in method `JsonResponse(dynamic)` to ensure that the ContentType for your response is set to `text/json`.
 
-``` c-sharp
+``` csharp
 return JsonResponse(new {id, firstname, lastname});
 ```
 
 ## Routes.cs
 If you would like to map requests to controllers & services directly, create a new class that inherits `Datasilk.Core.Web.Routes`. For example:
 
-``` c-sharp
+``` csharp
 using Microsoft.AspNetCore.Http;
 using Datasilk.Core.Web;
 

@@ -8,7 +8,7 @@ Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it
 
 Make sure to include the middleware within `Startup.cs`.
 
-``` c-sharp
+``` csharp
 app.UseDatasilkMvc(new MvcOptions()
 {
 	IgnoreRequestBodySize = true,
@@ -30,7 +30,7 @@ All page request URLs are mapped to controllers that inherit the `Datasilk.Core.
 ```
 
 **/Controllers/Home.cs**
-``` c-sharp
+``` csharp
 namespace MyProject.Controllers
 {
     public class Home: Datasilk.Core.Web.Controller
@@ -53,7 +53,7 @@ The Datasilk Core MVC framework comes with the ability to call *RESTful* web API
 
 #### Example
 
-``` c-sharp
+``` csharp
 namespace MyProject.Services
 {
     public class User: Datasilk.Core.Web.Service
