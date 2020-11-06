@@ -190,9 +190,12 @@ namespace MyProject.Services
 		{
 			//authenticate user
 			//...
-			if(authenticated){
+			if(authenticated)
+			{
 				return Success();
-			}else{
+			}
+			else
+			{
 				return AccessDenied("Incorrect email or password");
 			}
 		}

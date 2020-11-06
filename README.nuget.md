@@ -62,9 +62,12 @@ namespace MyProject.Services
 		public string Authenticate(string email, string password)
 		{
 			//authenticate user
-			if(Authenticated(email, password)){
+			if(Authenticated(email, password))
+			{
 				return Success();
-			}else{
+			}
+			else
+			{
 				return AccessDenied("Incorrect email and/or password");
 			}
 		}
