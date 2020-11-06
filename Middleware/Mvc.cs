@@ -189,8 +189,14 @@ namespace Datasilk.Core.Middleware
                     }
                     else
                     {
-                        page = new Web.Controller();
-                        page.Init(context, parameters, path, pathParts);
+                        //could not find controller
+                        page = new Web.Controller()
+                        {
+                            Context = context,
+                            Parameters = parameters,
+                            Path = path,
+                            PathParts = pathParts
+                        };
                         html = page.Error404();
                         return;
                     }
@@ -199,20 +205,29 @@ namespace Datasilk.Core.Middleware
                 {
                     classNamespace = controllerNamespaces[className];
                 }
+                //found controller
                 page = (Web.IController)Activator.CreateInstance(controllers[classNamespace]);
             }
 
             if (page != null)
             {
                 //render page
-                page.Init(context, parameters, path, pathParts);
+                page.Context = context;
+                page.Parameters = parameters;
+                page.Path = path;
+                page.PathParts = pathParts;
                 html = page.Render();
             }
             else
             {
                 //show 404 error
-                page = new Web.Controller();
-                page.Init(context, parameters, path, pathParts);
+                page = new Web.Controller()
+                {
+                    Context = context,
+                    Parameters = parameters,
+                    Path = path,
+                    PathParts = pathParts
+                };
                 html = page.Error404();
             }
 
@@ -290,7 +305,10 @@ namespace Datasilk.Core.Middleware
             }
 
             //update service fields
-            service.Init(context, parameters, path, pathParts);
+            service.Context = context;
+            service.Parameters = parameters;
+            service.Path = path;
+            service.PathParts = pathParts;
 
             //get class method from service type
             MethodInfo method = type.GetMethod(methodName);

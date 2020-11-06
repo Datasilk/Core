@@ -2,19 +2,23 @@
 
 # Datasilk Core MVC
 #### An MVC Framework for ASP.NET Core
-Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it supports Views using HTML with mustache variables, hierarchial Controller rendering, and RESTful web services.
+Datasilk Core is an ultra-fast, light-weight alternative to ASP.NET Core MVC, it supports Views using HTML with mustache variables, hierarchical Controller rendering, and RESTful web services.
 
 ## Installation
 
+#### From Nuget
 1. Include the Nuget Package `Datasilk.Core.Mvc` within your ASP.NET Core project.
 
-That's it! Next, learn how to use the Datasilk Core MVC framework to build web Controllers & web services.
+#### From Github
+1. Add this repository to your ASP.NET Core project as a submodule:
+	
+	`git submodule add https://github.com/Datasilk/Core`
 
 ## Startup.cs
 
-Make sure to include the middelware within your `Startup` class `Configure` method.
+Make sure to include the middleware within `Startup.cs`.
 
-```
+``` c-sharp
 public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 {
 	app.UseDatasilkMvc(new MvcOptions()
@@ -36,7 +40,7 @@ public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 All page request URLs are mapped to controllers that inherit the `Datasilk.Core.Web.IController` interface. For example, the URL `http://localhost:7770/products` would map to the class `MyProject.Controllers.Products`. Each controller contains one method, `Render`, which is used to serve a web page to the user's web browser.
 
 **/Views/Home/home.html**
-```
+``` c-sharp
 <div class="hero">
 	<h1>{{title}}</h1>
 	<h3>{{description}}</h3>
@@ -44,7 +48,7 @@ All page request URLs are mapped to controllers that inherit the `Datasilk.Core.
 ```
 
 **/Controllers/Home.cs**
-```
+``` c-sharp
 namespace MyProject.Controllers
 {
     public class Home: Datasilk.Core.Web.Controller
@@ -76,7 +80,7 @@ You could create controllers that inherit other controllers, then `return base.R
 ```
 
 **/Controllers/Layout.cs**
-```
+``` c-sharp
 namespace MyProject.Controllers
 {
     public class Layout: Datasilk.Core.Web.Controller
@@ -93,7 +97,7 @@ namespace MyProject.Controllers
 ```
 
 **/Controllers/Home.cs**
-```
+``` c-sharp
 namespace MyProject.Controllers
 {
     public class Home: Layout
@@ -117,14 +121,14 @@ To render Controllers based on complex URL paths, the MVC framework relies heavi
 
 The request path is split up into an array and passed into the `PathParts` field within the `Datasilk.Core.Web.Controller` class. The `PathParts` array is used to determine what type of content to load for the user. If we're loading a blog post like the above example, we can check the `PathParts` array to find year, month, and day, followed by the title of the blog post, and determine which blog post to load.
 
-```
+``` c-sharp
 namespace MyProject.Controllers
 {
     public class Blog: Datasilk.Core.Web.Controller
     {
         public override string Render(string body = "")
 		{
-			if(PathParts.length > 1){
+			if(PathParts.length > 3){
 				//get blog entry
 				var date = new Date(PathParts[1] + "/" + PathParts[2] + "/" + PathParts[3]);
 				var title = PathParts[3] || "";
@@ -147,16 +151,36 @@ namespace MyProject.Controllers
 ### Access Denied
 If your web page is protected behind security and must display an `Access Denied` page, you can use: 
 
-```return AccessDenied<Login>(this)```
+``` c-sharp
+return AccessDenied<Login>(this)
+```
 
  from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `403`. The above example renders the Login controller.
+
+### 500 Error
+If your controller experiences an error, you can show another controller: 
+
+``` c-sharp
+return Error<BrokenPage>(this)
+```
+
+ from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `500`. The above example renders the BrokenPage controller.
+
+### 404 Error
+If your controller processes an unknown request path, you could show a 404 not found error:
+
+``` c-sharp
+return Error404<NotFound>(this)
+```
+
+ from within your `Datasilk.Core.Web.Controller` class `Render` method, which will render a controller of your choosing with a response status code of `404`. The above example renders the NotFound controller.
 
 ## Web Services
 The Datasilk Core MVC framework comes with the ability to call *RESTful* web APIs. All web API calls are executed from `Datasilk.Core.Web.IService` interfaces.
 
 #### Example
 
-```
+``` c-sharp
 namespace MyProject.Services
 {
     public class User: Datasilk.Core.Web.Service
@@ -169,27 +193,26 @@ namespace MyProject.Services
 			if(authenticated){
 				return Success();
 			}else{
-				S.Response.StatusCode = 500;
-				return "";
+				return AccessDenied("Incorrect email or password");
 			}
 		}
 	}
 }
 ```
 
-In the example above, the user would send an `AJAX` `POST` via JavaScript to the Uri `/api/User/Authenticate` to authenticate their email & password. The data sent to the server would be formatted using the JavaScript function, `JSON.stringify({email:myemail, password:mypass})`, and the data properties would be mapped to C# method arguments.
+In the example above, the user would send an `AJAX` `POST` via JavaScript to the Uri `/api/User/Authenticate` to authenticate their email & password. The data sent to the server over HTTPS would be formatted using the JavaScript function, `JSON.stringify({email:myemail, password:mypass})`, and the data properties would be mapped to C# method arguments.
 
 ### Web Service Response
 All `Datasilk.Core.Web.Service` methods should return a string. You can easily return a JSON object as well. Use the built-in method `JsonResponse(dynamic)` to ensure that the ContentType for your response is set to `text/json`.
 
-```
-return JsonResponse(obj);
+``` c-sharp
+return JsonResponse(new {id, firstname, lastname});
 ```
 
 ## Routes.cs
 If you would like to map requests to controllers & services directly, create a new class that inherits `Datasilk.Core.Web.Routes`. For example:
 
-```
+``` c-sharp
 using Microsoft.AspNetCore.Http;
 using Datasilk.Core.Web;
 
@@ -220,36 +243,3 @@ public class Routes : Datasilk.Core.Web.Routes
 
 #### Why Routing?
 By routing new class instances using the `new` keyword, you bypass the last resort for Datasilk Core MVC, which is to create an instance of your `Controller` or `Service` class using `Activator.CreateInstance`, taking 10 times the amount of CPU ticks to instatiate. You don't have to use routing, but it does speed up performance slightly.
-
-
-## Optional: Datasilk Core Javascript Library
-Learn more about the optional Javascript library, [Datasilk/CoreJs](https://github.com/Datasilk/CoreJs), which contains various client-side features used to build a modern web application. The library includes features such as message alert boxes, popup modals, drag & drop functionality, HTML templating, and custom scrollbars.
-
-### Client-Side Content Injection
-Using the Datasilk Core JS library, you can process AJAX calls that modify the web page. For example, the following Javascript will inject content from the Datasilk Service onto the web page:
-
-```javascript
-S.ajax.post('Members/GetList', {userId:userId}, S.ajax.inject, null, true);
-```
-
-Calling `S.ajax.post` above will process the response using the `S.ajax.inject` method. Make sure to include the fifth argument `true` to parse the response as JSON.
-
-Then, the Datasilk Service method `Members.GetList` would return the JSON object using the built-in method `Inject(string, ResponseType, string, string, string)`.
-
-```csharp
-namespace MyProject.Services
-{
-    public class Members: Datasilk.Core.Web.Service
-    {
-		[POST]
-		public string GetList(string userId)
-		{
-			//return list of members associated with user ID
-			//...
-			return Inject('.member-list > ul', ResponseType.replace, view.Render(), 'updateMemberCount(' + members.Length + ')');
-		}
-	}
-}
-```
-
-The Service above returns the JSON object that defines the CSS selector to inject HTML content into, how to inject the content (in this case, we will replace existing content), the rendered view (as HTML), and also a Javascript method to call once the content is injected.

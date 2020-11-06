@@ -10,7 +10,8 @@ namespace Datasilk.Core.Web
 
         string Render(string body = "");
         string Redirect(string url);
-
+        void AddScript(string url, string id = "", string callback = "");
+        void AddCSS(string url, string id = "");
         string Error<T>() where T : IController;
         string Error(string message = "Error 500");
         string Error404<T>() where T : IController;
@@ -44,8 +45,5 @@ namespace Datasilk.Core.Web
             var controller = LoadController<T>(parent);
             return controller.Render();
         }
-
-        void AddScript(string url, string id = "", string callback = "");
-        void AddCSS(string url, string id = "");
     }
 }

@@ -9,7 +9,5 @@ namespace Datasilk.Core.Web
         string Path { get; set; }
         string[] PathParts { get; set; }
         Parameters Parameters { get; set; }
-
-        void Init(HttpContext context, Parameters parameters, string path, string[] pathParts);
     }
 }
