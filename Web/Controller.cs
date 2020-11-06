@@ -8,7 +8,9 @@ namespace Datasilk.Core.Web
         public StringBuilder Scripts { get; set; } = new StringBuilder();
         public StringBuilder Css { get; set; } = new StringBuilder();
         private List<string> Resources { get; set; } = new List<string>();
-        
+
+
+        public virtual void Init() { }
         public virtual string Render(string body = "")
         {
             return body;

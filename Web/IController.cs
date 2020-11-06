@@ -8,6 +8,7 @@ namespace Datasilk.Core.Web
         StringBuilder Scripts { get; set; }
         StringBuilder Css { get; set; }
 
+        void Init();
         string Render(string body = "");
         string Redirect(string url);
         void AddScript(string url, string id = "", string callback = "");

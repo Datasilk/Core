@@ -8,8 +8,7 @@ namespace Datasilk.Core.Web
         public string Path { get; set; }
         public string[] PathParts { get; set; }
         public Parameters Parameters { get; set; }
-
-        public virtual void Dispose(){}
+        public virtual void Dispose() { }
     }
 }
 

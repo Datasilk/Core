@@ -197,6 +197,7 @@ namespace Datasilk.Core.Middleware
                             Path = path,
                             PathParts = pathParts
                         };
+                        page.Init();
                         html = page.Error404();
                         return;
                     }
@@ -216,6 +217,7 @@ namespace Datasilk.Core.Middleware
                 page.Parameters = parameters;
                 page.Path = path;
                 page.PathParts = pathParts;
+                page.Init();
                 html = page.Render();
             }
             else
@@ -228,6 +230,7 @@ namespace Datasilk.Core.Middleware
                     Path = path,
                     PathParts = pathParts
                 };
+                page.Init();
                 html = page.Error404();
             }
 
