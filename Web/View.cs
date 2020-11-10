@@ -533,7 +533,7 @@ public class View
                                 var pointer = ViewPartialPointers.Paths.Where(a => partial_path.IndexOf(a.Key) == 0).Select(p => new { p.Key, p.Value }).FirstOrDefault();
                                 if (pointer != null)
                                 {
-                                    partial_path.Replace(pointer.Key, pointer.Value);
+                                    partial_path = partial_path.Replace(pointer.Key, pointer.Value);
                                 }
                                 partial_path = '/' + partial_path;
 
