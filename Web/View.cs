@@ -151,6 +151,14 @@ public class ViewPartial
     public string Prefix { get; set; } //prefix used in html variable names after importing the partial
 }
 
+/// <summary>
+/// Allow developers to create pointers so that the mustache variable can use a pointer path instead of the actual relative path to a partial view file
+/// </summary>
+public static class ViewPartialPointers
+{
+    public static List<KeyValuePair<string, string>> Paths { get; set; } = new List<KeyValuePair<string, string>>();
+}
+
 public class ViewData : IDictionary<string, string>
 {
     private Dictionary<string, string> _data = new Dictionary<string, string>();
@@ -515,59 +523,80 @@ public class View
                             viewElem.Name = arr[x].Substring(0, u - 1).Trim().ToLower();
                             u2 = arr[x].IndexOf('"', u + 2);
                             var partial_path = arr[x].Substring(u + 1, u2 - u - 1);
-
-                            //load the view HTML
-                            var newScaff = new View(partial_path, "", cache);
-
-                            //check for HTML include variables
-                            if (i - u2 > 0)
-                            {
-                                var vars = arr[x].Substring(u2 + 1, i - (u2 + 1)).Trim();
-                                if (vars.IndexOf(":") > 0)
+                            if (partial_path.Length > 0) {
+                                if (partial_path[0] == '/')
                                 {
-                                    //HTML include variables exist
-                                    try
+                                    partial_path = partial_path.Substring(1);
+                                }
+
+                                //replace pointer paths with relative paths
+                                var pointer = ViewPartialPointers.Paths.Where(a => partial_path.IndexOf(a.Key) == 0).Select(p => new { p.Key, p.Value }).FirstOrDefault();
+                                if (pointer != null)
+                                {
+                                    partial_path.Replace(pointer.Key, pointer.Value);
+                                }
+                                partial_path = '/' + partial_path;
+
+
+                                //load the view HTML
+                                var newScaff = new View(partial_path, "", cache);
+
+                                //check for HTML include variables
+                                if (i - u2 > 0)
+                                {
+                                    var vars = arr[x].Substring(u2 + 1, i - (u2 + 1)).Trim();
+                                    if (vars.IndexOf(":") > 0)
                                     {
-                                        var kv = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
-                                        foreach (var kvp in kv)
+                                        //HTML include variables exist
+                                        try
                                         {
-                                            newScaff[kvp.Key] = kvp.Value;
+                                            var kv = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
+                                            foreach (var kvp in kv)
+                                            {
+                                                newScaff[kvp.Key] = kvp.Value;
+                                            }
+                                        }
+                                        catch (Exception)
+                                        {
                                         }
                                     }
-                                    catch (Exception)
+                                }
+
+                                //rename child view variables, adding a prefix
+                                var ht = newScaff.Render(newScaff.data, false);
+                                var y = 0;
+                                var prefix = viewElem.Name + "-";
+                                while (y >= 0)
+                                {
+                                    y = ht.IndexOf("{{", y);
+                                    if (y < 0) { break; }
+                                    if (ht.Substring(y + 2, 1) == "/")
                                     {
+                                        ht = ht.Substring(0, y + 3) + prefix + ht.Substring(y + 3);
                                     }
+                                    else
+                                    {
+                                        ht = ht.Substring(0, y + 2) + prefix + ht.Substring(y + 2);
+                                    }
+                                    y += 2;
                                 }
-                            }
 
-                            //rename child view variables, adding a prefix
-                            var ht = newScaff.Render(newScaff.data, false);
-                            var y = 0;
-                            var prefix = viewElem.Name + "-";
-                            while (y >= 0)
-                            {
-                                y = ht.IndexOf("{{", y);
-                                if (y < 0) { break; }
-                                if (ht.Substring(y + 2, 1) == "/")
+                                Partials.Add(new ViewPartial() { Name = viewElem.Name, Path = partial_path, Prefix = prefix });
+                                Partials.AddRange(newScaff.Partials.Select(a =>
                                 {
-                                    ht = ht.Substring(0, y + 3) + prefix + ht.Substring(y + 3);
-                                }
-                                else
-                                {
-                                    ht = ht.Substring(0, y + 2) + prefix + ht.Substring(y + 2);
-                                }
-                                y += 2;
+                                    var partial = a;
+                                    partial.Prefix = prefix + partial.Prefix;
+                                    return partial;
+                                })
+                                );
+                                arr[x] = "{!}" + ht + arr[x].Substring(i + 2);
                             }
-
-                            Partials.Add(new ViewPartial() { Name = viewElem.Name, Path = partial_path, Prefix = prefix });
-                            Partials.AddRange(newScaff.Partials.Select(a =>
+                            else
                             {
-                                var partial = a;
-                                partial.Prefix = prefix + partial.Prefix;
-                                return partial;
-                            })
-                            );
-                            arr[x] = "{!}" + ht + arr[x].Substring(i + 2);
+                                //partial not found
+                                arr[x] = "{!}" + arr[x].Substring(i + 2);
+                            }
+                            
                             HTML = JoinHTML(arr);
                             dirty = true; //HTML is dirty, restart loop
                             break;

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>1.0.4.1</Version>
+    <Version>1.0.4.2</Version>
     <RootNamespace>Datasilk.Core</RootNamespace>
     <PackageId>Datasilk.Core.Mvc</PackageId>
     <Authors>Mark Entingh</Authors>
@@ -16,10 +16,10 @@
     <RepositoryUrl>https://github.com/datasilk/core</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>MVC, Web API, lightweight</PackageTags>
-    <PackageReleaseNotes>Added the Init method back to the IController interface since it is a requirement.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added the Init method back to the IController interface &amp; IService interface since it is a requirement.</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.4.1</AssemblyVersion>
-    <FileVersion>1.0.4.1</FileVersion>
+    <AssemblyVersion>1.0.4.2</AssemblyVersion>
+    <FileVersion>1.0.4.2</FileVersion>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
