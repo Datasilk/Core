@@ -735,7 +735,7 @@ public class View
     {
         //deserialize list of elements since we will be manipulating the list,
         //so we don't want to permanently mutate the public elements array
-        var elems = DeepCopy(Elements);
+        var elems = CloneElements(Elements);
         if (elems.Count > 0)
         {
             //render view with paired nData data
@@ -790,7 +790,6 @@ public class View
             {
                 //remove all groups of HTML in list that should not be displayed
                 List<int> removeIndexes = new List<int>();
-                bool isInList = false;
                 for (int x = 0; x < closing.Count; x++)
                 {
                     if (closing[x].Show.FirstOrDefault() != true)
@@ -798,7 +797,7 @@ public class View
                         //add range of indexes from closing to the removeIndexes list
                         for (int y = closing[x].Start; y < closing[x].End; y++)
                         {
-                            isInList = false;
+                            var isInList = false;
                             for (int z = 0; z < removeIndexes.Count; z++)
                             {
                                 if (removeIndexes[z] == y) { isInList = true; break; }
@@ -887,30 +886,15 @@ public class View
         return html;
     }
 
-    private static T DeepCopy<T>(T obj)
-
+    private static List<ViewElement> CloneElements(List<ViewElement> elements)
     {
-        if (!typeof(T).IsSerializable)
+        return elements.ConvertAll(a => new ViewElement()
         {
-            throw new Exception("The source object must be serializable");
-        }
-
-        if (obj == null)
-        {
-            throw new Exception("The source object must not be null");
-        }
-
-        T result = default(T);
-        using (var memoryStream = new MemoryStream())
-        {
-            var formatter = new BinaryFormatter();
-            formatter.Serialize(memoryStream, obj);
-            memoryStream.Seek(0, SeekOrigin.Begin);
-            result = (T)formatter.Deserialize(memoryStream);
-            memoryStream.Close();
-        }
-        return result;
-
+            Htm = a.Htm,
+            Name = a.Name,
+            Path = a.Path,
+            Vars = a.Vars
+        });
     }
 
     private static string MapPath(string strPath = "")
