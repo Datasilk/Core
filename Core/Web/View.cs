@@ -21,7 +21,6 @@ public struct SerializedView
 public struct ViewElement
 {
     public string Name;
-    public string Path;
     public string Htm;
     public Dictionary<string, string> Vars;
 }
@@ -626,16 +625,19 @@ public class View
                                 viewElem.Htm = arr[x].Substring(i + 2);
 
                                 //get variable name
-                                if (s < i && s > 0)
-                                {
-                                    //found space
-                                    viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
-                                }
-                                else
-                                {
-                                    //found tag end
-                                    viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
-                                }
+                                //if (s < i && s > 0)
+                                //{
+                                //    //found space
+                                //    viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
+                                //}
+                                //else
+                                //{
+                                //    //found tag end
+                                //    viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
+                                //}
+                                //since each variable could have the same name but different parameters,
+                                //save the full name & parameters as the name
+                                viewElem.Name = arr[x].Substring(0, i);
 
                                 if (viewElem.Name.IndexOf('/') < 0)
                                 {
@@ -651,30 +653,44 @@ public class View
                                         Fields.Add(viewElem.Name, new int[] { Elements.Count });
                                     }
                                 }
-
-                                //get optional path stored within variable tag (if exists)
-                                //e.g. {{my-component "list"}}
-                                if (u > 0 && u < i - 2 && (c == -1 || c > u))
-                                {
-                                    u2 = arr[x].IndexOf('"', u + 2);
-                                    if (i - u2 > 0)
-                                    {
-                                        var data = arr[x].Substring(u + 1, u2 - u - 1);
-                                        viewElem.Path = data;
-                                    }
-                                }
-                                else if (s < i && s > 0)
+                                if (s < i && s > 0)
                                 {
                                     //get optional variables stored within tag
                                     var vars = arr[x].Substring(s + 1, i - s - 1);
+                                    //clean vars
+                                    var vi = 0;
+                                    var ve = 0;
+                                    var inq = false;//inside quotes
+                                    var vItems = new List<string>();
+                                    while(vi < vars.Length)
+                                    {
+                                        var a = vars.Substring(vi, 1);
+                                        if(a == "\"") { inq = !inq ? true : false; }
+                                        if((inq == false && (a == ":" || a == ",")) || vi == vars.Length - 1)
+                                        {
+                                            if(vi == vars.Length - 1) { vi = vars.Length; }
+                                            var r = vars.Substring(ve, vi - ve).Trim();
+                                            if(r.Substring(0, 1) != "\"") { r = "\"" + r + "\""; }
+                                            vItems.Add(r);
+                                            ve = vi + 1;
+                                        }
+                                        vi++;
+                                    }
+                                    inq = false;
+                                    vars = "";
+                                    foreach(var item in vItems)
+                                    {
+                                        vars += item + (!inq ? ":" : ",");
+                                        inq = !inq ? true : false;
+                                    }
+                                    if(vars[^1] == ',') { vars = vars.Substring(0, vars.Length - 1); }
                                     try
                                     {
                                         viewElem.Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
                                     }
-                                    catch (Exception)
+                                    catch (Exception ex)
                                     {
                                     }
-
                                 }
                             }
                             else
@@ -718,17 +734,17 @@ public class View
         return string.Join("", html);
     }
 
-    public string Render()
-    {
-        return Render(data);
-    }
-
     private class ClosingElement
     {
         public string Name;
         public int Start;
         public int End;
         public List<bool> Show { get; set; } = new List<bool>();
+    }
+
+    public string Render()
+    {
+        return Render(data);
     }
 
     public string Render(ViewData nData, bool hideElements = true)
@@ -892,7 +908,6 @@ public class View
         {
             Htm = a.Htm,
             Name = a.Name,
-            Path = a.Path,
             Vars = a.Vars
         });
     }
