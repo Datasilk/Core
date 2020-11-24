@@ -625,19 +625,19 @@ public class View
                                 viewElem.Htm = arr[x].Substring(i + 2);
 
                                 //get variable name
-                                //if (s < i && s > 0)
-                                //{
-                                //    //found space
-                                //    viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
-                                //}
-                                //else
-                                //{
-                                //    //found tag end
-                                //    viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
-                                //}
+                                if (s < i && s > 0)
+                                {
+                                    //found space
+                                    viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
+                                }
+                                else
+                                {
+                                    //found tag end
+                                    viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
+                                }
                                 //since each variable could have the same name but different parameters,
                                 //save the full name & parameters as the name
-                                viewElem.Name = arr[x].Substring(0, i);
+                                //viewElem.Name = arr[x].Substring(0, i);
 
                                 if (viewElem.Name.IndexOf('/') < 0)
                                 {
