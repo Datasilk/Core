@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <Version>1.0.6.3</Version>
+    <Version>1.0.6.4</Version>
     <RootNamespace>Datasilk.Core</RootNamespace>
     <PackageId>Datasilk.Core.Mvc</PackageId>
     <Authors>Mark Entingh</Authors>
@@ -16,10 +16,10 @@
     <RepositoryUrl>https://github.com/datasilk/core</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>MVC, Web API, lightweight</PackageTags>
-    <PackageReleaseNotes>Reverted View library to treat mustache variables that have parameters as non-unique keys. All mustache variables must have a unique name outside of their parameters.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed bug when adding partial views to the ViewCache dictionary</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.6.3</AssemblyVersion>
-    <FileVersion>1.0.6.3</FileVersion>
+    <AssemblyVersion>1.0.6.4</AssemblyVersion>
+    <FileVersion>1.0.6.4</FileVersion>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 

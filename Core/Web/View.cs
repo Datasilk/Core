@@ -170,7 +170,15 @@ public class ViewData : IDictionary<string, string>
         }
         set
         {
-            _data[key] = value;
+            try
+            {
+                _data[key] = value;
+            }
+            catch (Exception)
+            {
+                _data.Add(key, value);
+            }
+            
         }
     }
 
@@ -292,7 +300,7 @@ public class View
     public string HTML = "";
     public string Section = ""; //section of the template to use for rendering
 
-    private ViewData data;
+    public ViewData Data;
     private Dictionary<string, ViewChild> children = null;
 
     public ViewChild Child(string id)
@@ -345,26 +353,37 @@ public class View
     {
         get
         {
-            if (!data.ContainsKey(key.ToLower()))
-            {
-                data.Add(key.ToLower(), "");
+            try { 
+                return Data[key.ToLower()];
             }
-            return data[key.ToLower()];
+            catch (Exception)
+            {
+                Data.Add(key.ToLower(), "");
+                return "";
+            }
         }
         set
         {
-            data[key.ToLower()] = value;
+            try
+            {
+                Data[key.ToLower()] = value;
+            }
+            catch (Exception)
+            {
+                Data.Add(key.ToLower(), value);
+            }
+            
         }
     }
 
     public bool ContainsKey(string key)
     {
-        return data.ContainsKey(key.ToLower());
+        return Data.ContainsKey(key.ToLower());
     }
 
     public void Show(string blockKey)
     {
-        data[blockKey.ToLower(), true] = true;
+        Data[blockKey.ToLower(), true] = true;
     }
 
     /// <summary>
@@ -372,7 +391,7 @@ public class View
     /// </summary>
     public void Clear()
     {
-        data = new ViewData();
+        Data = new ViewData();
     }
 
     /// <summary>
@@ -389,20 +408,20 @@ public class View
                 var name = (root != "" ? root + "." : "") + property.Name.ToLower();
                 if (val == null)
                 {
-                    data[name] = "";
+                    Data[name] = "";
                 }
                 else if (val is string || val is int || val is long || val is double || val is decimal || val is short)
                 {
                     //add property value to dictionary
-                    data[name] = val.ToString();
+                    Data[name] = val.ToString();
                 }
                 else if (val is bool)
                 {
-                    data[name] = (bool)val == true ? "1" : "0";
+                    Data[name] = (bool)val == true ? "1" : "0";
                 }
                 else if (val is DateTime)
                 {
-                    data[name] = ((DateTime)val).ToShortDateString() + " " + ((DateTime)val).ToShortTimeString();
+                    Data[name] = ((DateTime)val).ToShortDateString() + " " + ((DateTime)val).ToShortTimeString();
                 }
                 else if (val is object)
                 {
@@ -417,7 +436,7 @@ public class View
     {
         SerializedView cached = new SerializedView() { Elements = new List<ViewElement>() };
         Filename = file;
-        data = new ViewData();
+        Data = new ViewData();
         Section = section;
         if (file != "")
         {
@@ -434,287 +453,288 @@ public class View
                 if (cache.ContainsKey(file + '/' + section) == true)
                 {
                     cached = cache[file + '/' + section];
-                    data = cached.Data;
+                    //Data = cached.Data;
                     Elements = cached.Elements;
                     Fields = cached.Fields;
                 }
             }
         }
 
-        if (cached.Elements.Count == 0)
+        //was able to retrieve cached object
+        if (cached.Elements.Count != 0) { return; }
+
+        //was NOT able to retrieve cached object
+        Elements = new List<ViewElement>();
+
+        //try loading file from disk
+        if (file != "")
         {
-            Elements = new List<ViewElement>();
-
-            //try loading file from disk
-            if (file != "")
+            if (File.Exists(MapPath(file)))
             {
-                if (File.Exists(MapPath(file)))
+                HTML = File.ReadAllText(MapPath(file));
+            }
+        }
+        else
+        {
+            HTML = html;
+        }
+        if (HTML.Trim() == "") { return; }
+
+        //next, find the group of code matching the view section name
+        if (section != "")
+        {
+            //find starting tag (optionally with arguments)
+            //for example: {{button (name:submit, style:outline)}}
+            int[] e = new int[3];
+            e[0] = HTML.IndexOf("{{" + section);
+            if (e[0] >= 0)
+            {
+                e[1] = HTML.IndexOf("}", e[0]);
+                if (e[1] - e[0] <= 256)
                 {
-                    HTML = File.ReadAllText(MapPath(file));
+                    e[1] = HTML.IndexOf("{{/" + section + "}}", e[1]);
                 }
-            }
-            else
-            {
-                HTML = html;
-            }
-            if (HTML.Trim() == "") { return; }
+                else { e[0] = -1; }
 
-            //next, find the group of code matching the view section name
-            if (section != "")
+            }
+
+            if (e[0] >= 0 & e[1] > (e[0] + section.Length + 4))
             {
-                //find starting tag (optionally with arguments)
-                //for example: {{button (name:submit, style:outline)}}
-                int[] e = new int[3];
-                e[0] = HTML.IndexOf("{{" + section);
-                if (e[0] >= 0)
+                e[2] = e[0] + 4 + section.Length;
+                HTML = HTML.Substring(e[2], e[1] - e[2]);
+            }
+        }
+
+        //get view from html code
+        var dirty = true;
+        while (dirty == true)
+        {
+            dirty = false;
+            var arr = HTML.Split("{{");
+            var i = 0;
+            var s = 0;
+            var c = 0;
+            var u = 0;
+            var u2 = 0;
+            ViewElement viewElem;
+
+            //types of view elements
+
+            // {{title}}                        = variable
+            // {{address}} {{/address}}         = block
+            // {{button "/ui/button-medium"}}   = HTML include
+            // {{button "/ui/button" title:"save", onclick="do.this()"}} = HTML include with variables
+
+            //first, load all HTML includes
+            for (var x = 0; x < arr.Length; x++)
+            {
+                if (x == 0 && HTML.IndexOf(arr[x]) == 0)
                 {
-                    e[1] = HTML.IndexOf("}", e[0]);
-                    if (e[1] - e[0] <= 256)
+                    arr[x] = "{!}" + arr[x];
+                }
+                else if (arr[x].Trim() != "")
+                {
+                    i = arr[x].IndexOf("}}");
+                    s = arr[x].IndexOf(':');
+                    u = arr[x].IndexOf('"');
+                    if (i > 0 && u > 0 && u < i - 2 && (s == -1 || s > u) && loadPartials == true)
                     {
-                        e[1] = HTML.IndexOf("{{/" + section + "}}", e[1]);
+                        //read partial include & load HTML from another file
+                        viewElem.Name = arr[x].Substring(0, u - 1).Trim().ToLower();
+                        u2 = arr[x].IndexOf('"', u + 2);
+                        var partial_path = arr[x].Substring(u + 1, u2 - u - 1);
+                        if (partial_path.Length > 0) {
+                            if (partial_path[0] == '/')
+                            {
+                                partial_path = partial_path.Substring(1);
+                            }
+
+                            //replace pointer paths with relative paths
+                            var pointer = ViewPartialPointers.Paths.Where(a => partial_path.IndexOf(a.Key) == 0).Select(p => new { p.Key, p.Value }).FirstOrDefault();
+                            if (pointer != null)
+                            {
+                                partial_path = partial_path.Replace(pointer.Key, pointer.Value);
+                            }
+                            partial_path = '/' + partial_path;
+
+
+                            //load the view HTML
+                            var newScaff = new View(partial_path, "", cache);
+
+                            //check for HTML include variables
+                            if (i - u2 > 0)
+                            {
+                                var vars = arr[x].Substring(u2 + 1, i - (u2 + 1)).Trim();
+                                if (vars.IndexOf(":") > 0)
+                                {
+                                    //HTML include variables exist
+                                    try
+                                    {
+                                        var kv = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
+                                        foreach (var kvp in kv)
+                                        {
+                                            newScaff[kvp.Key] = kvp.Value;
+                                        }
+                                    }
+                                    catch (Exception)
+                                    {
+                                    }
+                                }
+                            }
+
+                            //rename child view variables, adding a prefix
+                            var ht = newScaff.Render(newScaff.Data, false);
+                            var y = 0;
+                            var prefix = viewElem.Name + "-";
+                            while (y >= 0)
+                            {
+                                y = ht.IndexOf("{{", y);
+                                if (y < 0) { break; }
+                                if (ht.Substring(y + 2, 1) == "/")
+                                {
+                                    ht = ht.Substring(0, y + 3) + prefix + ht.Substring(y + 3);
+                                }
+                                else
+                                {
+                                    ht = ht.Substring(0, y + 2) + prefix + ht.Substring(y + 2);
+                                }
+                                y += 2;
+                            }
+
+                            Partials.Add(new ViewPartial() { Name = viewElem.Name, Path = partial_path, Prefix = prefix });
+                            Partials.AddRange(newScaff.Partials.Select(a =>
+                            {
+                                var partial = a;
+                                partial.Prefix = prefix + partial.Prefix;
+                                return partial;
+                            })
+                            );
+                            arr[x] = "{!}" + ht + arr[x].Substring(i + 2);
+                        }
+                        else
+                        {
+                            //partial not found
+                            arr[x] = "{!}" + arr[x].Substring(i + 2);
+                        }
+                            
+                        HTML = JoinHTML(arr);
+                        dirty = true; //HTML is dirty, restart loop
+                        break;
                     }
-                    else { e[0] = -1; }
-
                 }
 
-                if (e[0] >= 0 & e[1] > (e[0] + section.Length + 4))
-                {
-                    e[2] = e[0] + 4 + section.Length;
-                    HTML = HTML.Substring(e[2], e[1] - e[2]);
-                }
             }
-
-            //get view from html code
-            var dirty = true;
-            while (dirty == true)
+            if (dirty == false)
             {
-                dirty = false;
-                var arr = HTML.Split("{{");
-                var i = 0;
-                var s = 0;
-                var c = 0;
-                var u = 0;
-                var u2 = 0;
-                ViewElement viewElem;
-
-                //types of view elements
-
-                // {{title}}                        = variable
-                // {{address}} {{/address}}         = block
-                // {{button "/ui/button-medium"}}   = HTML include
-                // {{button "/ui/button" title:"save", onclick="do.this()"}} = HTML include with variables
-
-                //first, load all HTML includes
+                //next, process variables & blocks
                 for (var x = 0; x < arr.Length; x++)
                 {
-                    if (x == 0 && HTML.IndexOf(arr[x]) == 0)
+                    if (x == 0 && HTML.IndexOf(arr[0].Substring(3)) == 0)//skip "{!}" using substring
                     {
-                        arr[x] = "{!}" + arr[x];
+                        //first element is HTML only
+                        Elements.Add(new ViewElement() { Htm = arr[x].Substring(3), Name = "" });
                     }
                     else if (arr[x].Trim() != "")
                     {
                         i = arr[x].IndexOf("}}");
-                        s = arr[x].IndexOf(':');
+                        s = arr[x].IndexOf(' ');
+                        c = arr[x].IndexOf(':');
                         u = arr[x].IndexOf('"');
-                        if (i > 0 && u > 0 && u < i - 2 && (s == -1 || s > u) && loadPartials == true)
+                        viewElem = new ViewElement();
+                        if (i > 0)
                         {
-                            //read partial include & load HTML from another file
-                            viewElem.Name = arr[x].Substring(0, u - 1).Trim().ToLower();
-                            u2 = arr[x].IndexOf('"', u + 2);
-                            var partial_path = arr[x].Substring(u + 1, u2 - u - 1);
-                            if (partial_path.Length > 0) {
-                                if (partial_path[0] == '/')
-                                {
-                                    partial_path = partial_path.Substring(1);
-                                }
+                            viewElem.Htm = arr[x].Substring(i + 2);
 
-                                //replace pointer paths with relative paths
-                                var pointer = ViewPartialPointers.Paths.Where(a => partial_path.IndexOf(a.Key) == 0).Select(p => new { p.Key, p.Value }).FirstOrDefault();
-                                if (pointer != null)
-                                {
-                                    partial_path = partial_path.Replace(pointer.Key, pointer.Value);
-                                }
-                                partial_path = '/' + partial_path;
-
-
-                                //load the view HTML
-                                var newScaff = new View(partial_path, "", cache);
-
-                                //check for HTML include variables
-                                if (i - u2 > 0)
-                                {
-                                    var vars = arr[x].Substring(u2 + 1, i - (u2 + 1)).Trim();
-                                    if (vars.IndexOf(":") > 0)
-                                    {
-                                        //HTML include variables exist
-                                        try
-                                        {
-                                            var kv = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
-                                            foreach (var kvp in kv)
-                                            {
-                                                newScaff[kvp.Key] = kvp.Value;
-                                            }
-                                        }
-                                        catch (Exception)
-                                        {
-                                        }
-                                    }
-                                }
-
-                                //rename child view variables, adding a prefix
-                                var ht = newScaff.Render(newScaff.data, false);
-                                var y = 0;
-                                var prefix = viewElem.Name + "-";
-                                while (y >= 0)
-                                {
-                                    y = ht.IndexOf("{{", y);
-                                    if (y < 0) { break; }
-                                    if (ht.Substring(y + 2, 1) == "/")
-                                    {
-                                        ht = ht.Substring(0, y + 3) + prefix + ht.Substring(y + 3);
-                                    }
-                                    else
-                                    {
-                                        ht = ht.Substring(0, y + 2) + prefix + ht.Substring(y + 2);
-                                    }
-                                    y += 2;
-                                }
-
-                                Partials.Add(new ViewPartial() { Name = viewElem.Name, Path = partial_path, Prefix = prefix });
-                                Partials.AddRange(newScaff.Partials.Select(a =>
-                                {
-                                    var partial = a;
-                                    partial.Prefix = prefix + partial.Prefix;
-                                    return partial;
-                                })
-                                );
-                                arr[x] = "{!}" + ht + arr[x].Substring(i + 2);
+                            //get variable name
+                            if (s < i && s > 0)
+                            {
+                                //found space
+                                viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
                             }
                             else
                             {
-                                //partial not found
-                                arr[x] = "{!}" + arr[x].Substring(i + 2);
+                                //found tag end
+                                viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
                             }
-                            
-                            HTML = JoinHTML(arr);
-                            dirty = true; //HTML is dirty, restart loop
-                            break;
-                        }
-                    }
+                            //since each variable could have the same name but different parameters,
+                            //save the full name & parameters as the name
+                            //viewElem.Name = arr[x].Substring(0, i);
 
-                }
-                if (dirty == false)
-                {
-                    //next, process variables & blocks
-                    for (var x = 0; x < arr.Length; x++)
-                    {
-                        if (x == 0 && HTML.IndexOf(arr[0].Substring(3)) == 0)//skip "{!}" using substring
-                        {
-                            //first element is HTML only
-                            Elements.Add(new ViewElement() { Htm = arr[x].Substring(3), Name = "" });
-                        }
-                        else if (arr[x].Trim() != "")
-                        {
-                            i = arr[x].IndexOf("}}");
-                            s = arr[x].IndexOf(' ');
-                            c = arr[x].IndexOf(':');
-                            u = arr[x].IndexOf('"');
-                            viewElem = new ViewElement();
-                            if (i > 0)
+                            if (viewElem.Name.IndexOf('/') < 0)
                             {
-                                viewElem.Htm = arr[x].Substring(i + 2);
-
-                                //get variable name
-                                if (s < i && s > 0)
+                                if (Fields.ContainsKey(viewElem.Name))
                                 {
-                                    //found space
-                                    viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
+                                    //add element index to existing field
+                                    var field = Fields[viewElem.Name];
+                                    Fields[viewElem.Name] = field.Append(Elements.Count).ToArray();
                                 }
                                 else
                                 {
-                                    //found tag end
-                                    viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
-                                }
-                                //since each variable could have the same name but different parameters,
-                                //save the full name & parameters as the name
-                                //viewElem.Name = arr[x].Substring(0, i);
-
-                                if (viewElem.Name.IndexOf('/') < 0)
-                                {
-                                    if (Fields.ContainsKey(viewElem.Name))
-                                    {
-                                        //add element index to existing field
-                                        var field = Fields[viewElem.Name];
-                                        Fields[viewElem.Name] = field.Append(Elements.Count).ToArray();
-                                    }
-                                    else
-                                    {
-                                        //add field with element index
-                                        Fields.Add(viewElem.Name, new int[] { Elements.Count });
-                                    }
-                                }
-                                if (s < i && s > 0)
-                                {
-                                    //get optional variables stored within tag
-                                    var vars = arr[x].Substring(s + 1, i - s - 1);
-                                    //clean vars
-                                    var vi = 0;
-                                    var ve = 0;
-                                    var inq = false;//inside quotes
-                                    var vItems = new List<string>();
-                                    while(vi < vars.Length)
-                                    {
-                                        var a = vars.Substring(vi, 1);
-                                        if(a == "\"") { inq = !inq ? true : false; }
-                                        if((inq == false && (a == ":" || a == ",")) || vi == vars.Length - 1)
-                                        {
-                                            if(vi == vars.Length - 1) { vi = vars.Length; }
-                                            var r = vars.Substring(ve, vi - ve).Trim();
-                                            if(r.Substring(0, 1) != "\"") { r = "\"" + r + "\""; }
-                                            vItems.Add(r);
-                                            ve = vi + 1;
-                                        }
-                                        vi++;
-                                    }
-                                    inq = false;
-                                    vars = "";
-                                    foreach(var item in vItems)
-                                    {
-                                        vars += item + (!inq ? ":" : ",");
-                                        inq = !inq ? true : false;
-                                    }
-                                    if(vars[^1] == ',') { vars = vars.Substring(0, vars.Length - 1); }
-                                    try
-                                    {
-                                        viewElem.Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                    }
+                                    //add field with element index
+                                    Fields.Add(viewElem.Name, new int[] { Elements.Count });
                                 }
                             }
-                            else
+                            if (s < i && s > 0)
                             {
-                                viewElem.Name = "";
-                                viewElem.Htm = arr[x];
+                                //get optional variables stored within tag
+                                var vars = arr[x].Substring(s + 1, i - s - 1);
+                                //clean vars
+                                var vi = 0;
+                                var ve = 0;
+                                var inq = false;//inside quotes
+                                var vItems = new List<string>();
+                                while(vi < vars.Length)
+                                {
+                                    var a = vars.Substring(vi, 1);
+                                    if(a == "\"") { inq = !inq ? true : false; }
+                                    if((inq == false && (a == ":" || a == ",")) || vi == vars.Length - 1)
+                                    {
+                                        if(vi == vars.Length - 1) { vi = vars.Length; }
+                                        var r = vars.Substring(ve, vi - ve).Trim();
+                                        if(r.Substring(0, 1) != "\"") { r = "\"" + r + "\""; }
+                                        vItems.Add(r);
+                                        ve = vi + 1;
+                                    }
+                                    vi++;
+                                }
+                                inq = false;
+                                vars = "";
+                                foreach(var item in vItems)
+                                {
+                                    vars += item + (!inq ? ":" : ",");
+                                    inq = !inq ? true : false;
+                                }
+                                if(vars[^1] == ',') { vars = vars.Substring(0, vars.Length - 1); }
+                                try
+                                {
+                                    viewElem.Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
+                                }
+                                catch (Exception ex)
+                                {
+                                }
                             }
-                            Elements.Add(viewElem);
                         }
+                        else
+                        {
+                            viewElem.Name = "";
+                            viewElem.Htm = arr[x];
+                        }
+                        Elements.Add(viewElem);
                     }
                 }
             }
-            //cache the view data
-            if (cache != null)
+        }
+        //cache the view data
+        if (cache != null && !cache.ContainsKey(file + "/" + section))
+        {
+            var view = new SerializedView
             {
-                var view = new SerializedView
-                {
-                    Data = data,
-                    Elements = Elements,
-                    Fields = Fields,
-                    Partials = Partials
-                };
-                cache.Add(file + '/' + section, view);
-            }
+                //Data = Data,
+                Elements = Elements,
+                Fields = Fields,
+                Partials = Partials
+            };
+            cache.Add(file + '/' + section, view);
         }
     }
 
@@ -744,14 +764,15 @@ public class View
 
     public string Render()
     {
-        return Render(data);
+        return Render(Data);
     }
 
     public string Render(ViewData nData, bool hideElements = true)
     {
         //deserialize list of elements since we will be manipulating the list,
         //so we don't want to permanently mutate the public elements array
-        var elems = CloneElements(Elements);
+        var elems = Elements;
+        var ignoreElems = new List<int>();
         if (elems.Count > 0)
         {
             //render view with paired nData data
@@ -805,39 +826,33 @@ public class View
             if (hideElements == true)
             {
                 //remove all groups of HTML in list that should not be displayed
-                List<int> removeIndexes = new List<int>();
                 for (int x = 0; x < closing.Count; x++)
                 {
                     if (closing[x].Show.FirstOrDefault() != true)
                     {
-                        //add range of indexes from closing to the removeIndexes list
+                        //add range of indexes from closing to the ignoreElems list
                         for (int y = closing[x].Start; y < closing[x].End; y++)
                         {
                             var isInList = false;
-                            for (int z = 0; z < removeIndexes.Count; z++)
+                            for (int z = 0; z < ignoreElems.Count; z++)
                             {
-                                if (removeIndexes[z] == y) { isInList = true; break; }
+                                if (ignoreElems[z] == y) { isInList = true; break; }
                             }
-                            if (isInList == false) { removeIndexes.Add(y); }
+                            if (isInList == false) { ignoreElems.Add(y); }
                         }
                     }
-                }
-
-                //physically remove HTML list items from view
-                int offset = 0;
-                for (int z = 0; z < removeIndexes.Count; z++)
-                {
-                    elems.RemoveAt(removeIndexes[z] - offset);
-                    offset += 1;
                 }
             }
 
             //finally, replace view variables with custom data
             for (var x = 0; x < elems.Count; x++)
             {
+                if (ignoreElems.Contains(x)) { continue; }
+
                 //check if view item is an enclosing tag or just a variable
                 var useView = true;
-                if (elems[x].Name.IndexOf('/') < 0)
+                var hasSlash = elems[x].Name.IndexOf('/') >= 0;
+                if (hasSlash)
                 {
                     for (int y = 0; y < closing.Count; y++)
                     {
@@ -849,13 +864,12 @@ public class View
                 }
                 else { useView = false; }
 
-                if ((nData.ContainsKey(elems[x].Name) == true
-                || elems[x].Name.IndexOf('/') == 0) & useView == true)
+                var n = elems[x].Name.Replace("/", "");
+                var ck = nData.ContainsKey(n);
+                if ((ck || hasSlash) & useView == true)
                 {
                     //inject string into view variable
-                    var s = nData[elems[x].Name.Replace("/", "")];
-                    if (string.IsNullOrEmpty(s) == true) { s = ""; }
-                    view.Append(s + elems[x].Htm);
+                    view.Append((ck ? nData[n] : "") + elems[x].Htm);
                 }
                 else
                 {
@@ -884,13 +898,14 @@ public class View
             //add inner view elements
             if (part.Name.IndexOf('/') < 0)
             {
-                if (data.ContainsKey(part.Name))
+                try
                 {
-                    if (data[part.Name, true] == true)
+                    if (Data[part.Name, true] == true)
                     {
                         html += Get(part.Name);
                     }
                 }
+                catch (Exception) { }
             }
             else
             {

@@ -639,7 +639,9 @@ namespace Datasilk.Core.Middleware
                         {
                             paramVals[x] = JsonSerializer.Deserialize(param, paramType);
                         }
-                        catch (Exception) { }
+                        catch (Exception ex) {
+                            Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        }
                     }
                 }
                 else
