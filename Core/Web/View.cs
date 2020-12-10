@@ -6,7 +6,6 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.ComponentModel;
-using System.Runtime.Serialization.Formatters.Binary;
 
 [Serializable]
 public struct SerializedView
@@ -520,10 +519,11 @@ public class View
 
             //types of view elements
 
-            // {{title}}                        = variable
-            // {{address}} {{/address}}         = block
-            // {{button "/ui/button-medium"}}   = HTML include
-            // {{button "/ui/button" title:"save", onclick="do.this()"}} = HTML include with variables
+                // {{title}}                        = variable
+                // {{address}} {{/address}}         = block
+                // {{button "/ui/button-medium"}}   = HTML include
+                // {{button "/ui/button" title:"save", onclick="do.this()"}} = HTML include with properties
+                // {{page-list path:"blog", length:"5"}} = HTML variable with properties
 
             //first, load all HTML includes
             for (var x = 0; x < arr.Length; x++)
