@@ -19,9 +19,11 @@ public struct SerializedView
 [Serializable]
 public struct ViewElement
 {
-    public string Name;
-    public string Htm;
-    public Dictionary<string, string> Vars;
+    public string Name { get; set; }
+    public string Htm { get; set; }
+    public Dictionary<string, string> Vars { get; set; }
+    public bool isBlock { get; set; }
+    public int? blockEnd { get; set; }
 }
 
 public static class ViewCache
@@ -506,16 +508,23 @@ public class View
 
         //get view from html code
         var dirty = true;
+        var arr = HTML.Split("{{");
+        var i = 0;
+        var s = 0;
+        var c = 0;
+        var u = 0;
+        var u2 = 0;
+        ViewElement viewElem;
         while (dirty == true)
         {
             dirty = false;
-            var arr = HTML.Split("{{");
-            var i = 0;
-            var s = 0;
-            var c = 0;
-            var u = 0;
-            var u2 = 0;
-            ViewElement viewElem;
+            arr = HTML.Split("{{");
+            i = 0;
+            s = 0;
+            c = 0;
+            u = 0;
+            u2 = 0;
+            viewElem = new ViewElement();
 
             //types of view elements
 
@@ -660,7 +669,7 @@ public class View
                             //save the full name & parameters as the name
                             //viewElem.Name = arr[x].Substring(0, i);
 
-                            if (viewElem.Name.IndexOf('/') < 0)
+                            if (!viewElem.Name.Contains('/'))
                             {
                                 if (Fields.ContainsKey(viewElem.Name))
                                 {
@@ -672,6 +681,16 @@ public class View
                                 {
                                     //add field with element index
                                     Fields.Add(viewElem.Name, new int[] { Elements.Count });
+                                }
+                                //check if view element is a block
+                                for(var y = x + 1; y < arr.Length; y++)
+                                {
+                                    if(arr[y].IndexOf("/" + viewElem.Name + "}}") == 0)
+                                    {
+                                        viewElem.isBlock = true;
+                                        viewElem.blockEnd = y;
+                                        break;
+                                    }
                                 }
                             }
                             if (s < i && s > 0)
@@ -709,9 +728,7 @@ public class View
                                 {
                                     viewElem.Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
                                 }
-                                catch (Exception ex)
-                                {
-                                }
+                                catch (Exception){}
                             }
                         }
                         else
@@ -759,7 +776,7 @@ public class View
         public string Name;
         public int Start;
         public int End;
-        public List<bool> Show { get; set; } = new List<bool>();
+        public bool Show { get; set; } = false;
     }
 
     public string Render()
@@ -772,116 +789,34 @@ public class View
         //deserialize list of elements since we will be manipulating the list,
         //so we don't want to permanently mutate the public elements array
         var elems = Elements;
-        var ignoreElems = new List<int>();
-        if (elems.Count > 0)
+        if (elems.Count == 0) { return ""; }
+        var view = new StringBuilder();
+        bool isBlock;
+        bool hasSlash;
+        for (var x = 0; x < elems.Count; x++)
         {
-            //render view with paired nData data
-            var view = new StringBuilder();
-
-            var closing = new List<ClosingElement>();
-            //remove any unwanted blocks of HTML from view
-            for (var x = 0; x < elems.Count; x++)
+            //check if view item is an enclosing tag or just a variable
+            isBlock = elems[x].isBlock;
+            hasSlash = elems[x].Name.IndexOf('/') >= 0;
+            var showBlock = isBlock && !hasSlash && nData.ContainsKey(elems[x].Name) && nData[elems[x].Name] == "True";
+            if (isBlock == false && nData.ContainsKey(elems[x].Name))
             {
-                if (x < elems.Count - 1)
-                {
-                    for (var y = x + 1; y < elems.Count; y++)
-                    {
-                        //check for closing tag
-                        if (elems[y].Name == "/" + elems[x].Name)
-                        {
-                            //add enclosed group of HTML to list for removing
-                            var closed = new ClosingElement()
-                            {
-                                Name = elems[x].Name,
-                                Start = x,
-                                End = y
-                            };
-
-                            if (nData.ContainsKey(elems[x].Name) == true)
-                            {
-                                //check if user wants to include HTML 
-                                //that is between start & closing tag  
-                                if (nData[elems[x].Name, true] == true)
-                                {
-                                    closed.Show.Add(true);
-                                }
-                                else
-                                {
-                                    closed.Show.Add(false);
-                                }
-                            }
-                            else
-                            {
-                                closed.Show.Add(false);
-                            }
-
-                            closing.Add(closed);
-                            break;
-                        }
-                    }
-
-                }
+                //inject string into view variable
+                view.Append(nData[elems[x].Name] + elems[x].Htm);
             }
-
-            if (hideElements == true)
+            else if(hideElements == true && elems[x].blockEnd != null && !showBlock)
             {
-                //remove all groups of HTML in list that should not be displayed
-                for (int x = 0; x < closing.Count; x++)
-                {
-                    if (closing[x].Show.FirstOrDefault() != true)
-                    {
-                        //add range of indexes from closing to the ignoreElems list
-                        for (int y = closing[x].Start; y < closing[x].End; y++)
-                        {
-                            var isInList = false;
-                            for (int z = 0; z < ignoreElems.Count; z++)
-                            {
-                                if (ignoreElems[z] == y) { isInList = true; break; }
-                            }
-                            if (isInList == false) { ignoreElems.Add(y); }
-                        }
-                    }
-                }
+                //skip elements if user decides not to show a block
+                x = elems[x].blockEnd.Value - 1; 
             }
-
-            //finally, replace view variables with custom data
-            for (var x = 0; x < elems.Count; x++)
+            else
             {
-                if (ignoreElems.Contains(x)) { continue; }
-
-                //check if view item is an enclosing tag or just a variable
-                var useView = true;
-                var hasSlash = elems[x].Name.IndexOf('/') >= 0;
-                if (hasSlash)
-                {
-                    for (int y = 0; y < closing.Count; y++)
-                    {
-                        if (elems[x].Name == closing[y].Name)
-                        {
-                            useView = false; break;
-                        }
-                    }
-                }
-                else { useView = false; }
-
-                var n = elems[x].Name.Replace("/", "");
-                var ck = nData.ContainsKey(n);
-                if ((ck || hasSlash) & useView == true)
-                {
-                    //inject string into view variable
-                    view.Append((ck ? nData[n] : "") + elems[x].Htm);
-                }
-                else
-                {
-                    //passively add htm, ignoring view variable
-                    view.Append((hideElements == true ? "" : (elems[x].Name != "" ? "{{" + elems[x].Name + "}}" : "")) + elems[x].Htm);
-                }
+                //passively add htm, ignoring view variable
+                view.Append((hideElements == true ? "" : (elems[x].Name != "" ? "{{" + elems[x].Name + "}}" : "")) + elems[x].Htm);
             }
-
-            //render scaffolding as HTML string
-            return view.ToString();
         }
-        return "";
+        //render scaffolding as HTML string
+        return view.ToString();
     }
 
     public string Get(string name)
