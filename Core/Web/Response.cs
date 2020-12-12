@@ -5,7 +5,8 @@
         replace = 0,
         append = 1,
         before = 2,
-        after = 3
+        after = 3,
+        prepend = 4
     }
 
     //used to send a JSON object back to the client web browser
