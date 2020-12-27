@@ -43,7 +43,7 @@ All page request URLs are mapped to controllers that inherit the `Datasilk.Core.
 ``` csharp
 <div class="hero">
 	<h1>{{title}}</h1>
-	<h3>{{description}}</h3>
+	<h2>{{description}}</h2>
 </div>
 ```
 
@@ -57,8 +57,8 @@ namespace MyProject.Controllers
 		{
 			//render page
 			var view = new View("/Views/Home/home.html");
-			view["title"] = "Welcome";
-			view["description"] = "I like to write software";
+			view["title"] = "Hello.";
+			view["description"] = "I like to write software.";
 			AddScript("/js/views/home/home.js");
 			return view.Render();		
 		}
@@ -66,10 +66,10 @@ namespace MyProject.Controllers
 }
 ```
 
-In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Controllers.Home` class. This class loads `/Views/Home/home.html` into a `View` object and replaces the `{{title}}` & `{{description}}` variables located within the `home.html` file with the text, "Welcome!" & "I like to write software". Then, the page returns the contents of `view.Render()`.
+In the example above, a user tries to access the URL `http://localhost:7770/`, which (by default) will render the contents of the `MyProject.Controllers.Home` class. This class loads `/Views/Home/home.html` into a `View` object and replaces the `{{title}}` & `{{description}}` variables located within the `home.html` file with the text, "Hello" & "I like to write software". Then, the page returns the contents of `view.Render()`.
 
 #### Controller Hierarchy
-You could create controllers that inherit other controllers, then `return base.Render(view.Render())` to create a cascade. This would be useful to have a base controller that renders the header & footer of a web page, while all other controllers render the body.
+You could create controllers that inherit other controllers, then `return base.Render(view.Render())` to create a cascade of controller rendering. This would be useful to have a base controller that renders the header & footer of a web page, while all other controllers render the body.
 
 **/Views/Shared/layout.html**
 ```
@@ -209,7 +209,7 @@ In the example above, the user would send an `AJAX` `POST` via JavaScript to the
 All `Datasilk.Core.Web.Service` methods should return a string. You can easily return a JSON object as well. Use the built-in method `JsonResponse(dynamic)` to ensure that the ContentType for your response is set to `text/json`.
 
 ``` csharp
-return JsonResponse(new {id, firstname, lastname});
+return JsonResponse(new {id = user.Id, firstname, lastname});
 ```
 
 ## Routes.cs
