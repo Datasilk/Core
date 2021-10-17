@@ -22,6 +22,7 @@ public struct ViewElement
     public string Name { get; set; }
     public string Htm { get; set; }
     public Dictionary<string, string> Vars { get; set; }
+    public string Var { get; set; }
     public bool isBlock { get; set; }
     public int? blockEnd { get; set; }
 }
@@ -697,6 +698,7 @@ public class View
                             {
                                 //get optional variables stored within tag
                                 var vars = arr[x].Substring(s + 1, i - s - 1);
+                                viewElem.Var = vars.Trim();
                                 //clean vars
                                 var vi = 0;
                                 var ve = 0;
