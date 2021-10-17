@@ -313,6 +313,11 @@ namespace Datasilk.Core.Middleware
             service.Path = path;
             service.PathParts = pathParts;
             service.Init();
+            if(context.Response.StatusCode >= 400)
+            {
+                //service init returned an error status code
+                return;
+            }
 
             //get class method from service type
             MethodInfo method = type.GetMethod(methodName);
@@ -334,7 +339,7 @@ namespace Datasilk.Core.Middleware
             }
 
             //try to cast params to correct types
-            var paramVals = MapParameters(method.GetParameters(), parameters);
+            var paramVals = MapParameters(method.GetParameters(), parameters, method);
 
             //execute service method
             string result = (string)method.Invoke(service, paramVals);
@@ -545,7 +550,7 @@ namespace Datasilk.Core.Middleware
             }
         }
 
-        private static object[] MapParameters(ParameterInfo[] methodParams, Web.Parameters parameters)
+        private static object[] MapParameters(ParameterInfo[] methodParams, Web.Parameters parameters, MethodInfo method)
         {
             var paramVals = new object[methodParams.Length];
             for (var x = 0; x < methodParams.Length; x++)
@@ -626,7 +631,22 @@ namespace Datasilk.Core.Middleware
                     else if (paramType.Name.IndexOf("Dictionary") == 0)
                     {
                         //convert param value (JSON) to Dictionary
-                        paramVals[x] = JsonSerializer.Deserialize<Dictionary<string, string>>(param);
+                        if(param != "" && param != "[]" && param != "{}")
+                        {
+                            try
+                            {
+                                paramVals[x] = JsonSerializer.Deserialize<Dictionary<string, string>>(param);
+                            }
+                            catch (Exception)
+                            {
+                                Console.WriteLine("Could not convert JSON string into Dictionary for parameter \"" + methodParamName + "\" in method \"" +  method.Name + "\"");
+                            }
+                        }
+                        
+                        if(paramVals[x] == null) { 
+                            paramVals[x] = new Dictionary<string, string>(); 
+                        }
+                        
                     }
                     else if (paramType.Name == "Boolean")
                     {
