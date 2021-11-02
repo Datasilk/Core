@@ -26,6 +26,7 @@ namespace Datasilk.Core.Middleware
         private Dictionary<string, Type> services = new Dictionary<string, Type>();
         private Dictionary<string, string> controllerNamespaces = new Dictionary<string, string>();
         private Dictionary<string, string> serviceNamespaces = new Dictionary<string, string>();
+        private Dictionary<string, MethodInfo> serviceMethods = new Dictionary<string, MethodInfo>();
 
         private string[] phishingPaths = new string[] {
             "phpmyadmin/", "webfig/", ".env", "config/getuser", "app", "shell", "boaform/admin/formLogin",
@@ -103,6 +104,7 @@ namespace Datasilk.Core.Middleware
             if (phishingPaths.Contains(path)) {
                 context.Response.StatusCode = 500;
                 if (options.InvokeNext) { await _next.Invoke(context); }
+                return;
             }
 
             var paths = path.Split('/').Where(a => a != "").ToArray();
@@ -113,56 +115,55 @@ namespace Datasilk.Core.Middleware
                 //do not process files, but instead return a 404 error
                 context.Response.StatusCode = 404;
                 if (options.InvokeNext) { await _next.Invoke(context); }
+                return;             
+            }
+            //get parameters from request body
+            var parameters = await GetParameters(context);
+
+            //trap phishing requests that contain specific parameter keys
+            if(phishingParamKeys.Any(a => parameters.Any(b => b.Key == a)))
+            {
+                context.Response.StatusCode = 500;
+                if (options.InvokeNext) { await _next.Invoke(context); }
+                return;
+            }
+
+            if (options.LogRequests)
+            {
+                Logger.LogDebug("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
+                    DateTime.Now.ToString("hh:mm:ss"),
+                    context.Request.Method,
+                    string.IsNullOrEmpty(path) ? "/" : path,
+                    Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
+                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
+                    requestCount,
+                    string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
+                    context.Connection.RemoteIpAddress);
+            }
+            if (options.WriteDebugInfoToConsole)
+            {
+                Console.WriteLine("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
+                    DateTime.Now.ToString("hh:mm:ss"),
+                    context.Request.Method,
+                    string.IsNullOrEmpty(path) ? "/" : path,
+                    Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
+                    ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
+                    requestCount,
+                    string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
+                    context.Connection.RemoteIpAddress);
+            }
+
+            if (paths.Length > 1 && options.ServicePaths.Contains(paths[0]) == true)
+            {
+                //handle web API requests
+                ProcessService(context, path, paths, parameters);
             }
             else
             {
-                //get parameters from request body
-                var parameters = await GetParameters(context);
-
-                //trap phishing requests that contain specific parameter keys
-                if(phishingParamKeys.Any(a => parameters.Any(b => b.Key == a)))
-                {
-                    context.Response.StatusCode = 500;
-                    if (options.InvokeNext) { await _next.Invoke(context); }
-                }
-
-                if (options.LogRequests)
-                {
-                    Logger.LogDebug("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
-                        DateTime.Now.ToString("hh:mm:ss"),
-                        context.Request.Method,
-                        string.IsNullOrEmpty(path) ? "/" : path,
-                        Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
-                        ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
-                        requestCount,
-                        string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
-                        context.Connection.RemoteIpAddress);
-                }
-                if (options.WriteDebugInfoToConsole)
-                {
-                    Console.WriteLine("{0} [{7}] {1} {2} ({3}), {4} kb, # {5}, params: {6}",
-                        DateTime.Now.ToString("hh:mm:ss"),
-                        context.Request.Method,
-                        string.IsNullOrEmpty(path) ? "/" : path,
-                        Math.Round(((DateTime.Now - requestStart)).TotalMilliseconds) + " ms",
-                        ((parameters.RequestBody.Length * sizeof(char)) / 1024.0).ToString("N1"),
-                        requestCount,
-                        string.Join('&', parameters.Select(a => a.Key + "=" + a.Value).ToArray()),
-                        context.Connection.RemoteIpAddress);
-                }
-
-                if (paths.Length > 1 && options.ServicePaths.Contains(paths[0]) == true)
-                {
-                    //handle web API requests
-                    ProcessService(context, path, paths, parameters);
-                }
-                else
-                {
-                    //handle controller requests
-                    ProcessController(context, path, paths, parameters);
-                }
-                if (options.InvokeNext) { await _next.Invoke(context); }
+                //handle controller requests
+                ProcessController(context, path, paths, parameters);
             }
+            if (options.InvokeNext) { await _next.Invoke(context); }
             
         }
 
@@ -320,7 +321,17 @@ namespace Datasilk.Core.Middleware
             }
 
             //get class method from service type
-            MethodInfo method = type.GetMethod(methodName);
+            var serviceMethodName = className + "/" + methodName;
+            MethodInfo method;
+            if (serviceMethods.ContainsKey(serviceMethodName))
+            {
+                method = serviceMethods[serviceMethodName];
+            }
+            else
+            {
+                method = type.GetMethod(methodName);
+                serviceMethods.Add(serviceMethodName, method);
+            }
 
             //check if method exists
             if (method == null)

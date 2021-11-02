@@ -1,4 +1,6 @@
-﻿namespace Datasilk.Core.Middleware
+﻿using System;
+
+namespace Datasilk.Core.Middleware
 {
     public class MvcOptions
     {
