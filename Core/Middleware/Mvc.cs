@@ -54,7 +54,7 @@ namespace Datasilk.Core.Middleware
                 assemblies.Add(Assembly.GetEntryAssembly());
             }
 
-            foreach(var assembly in assemblies)
+            foreach (var assembly in assemblies)
             {
                 //get a list of controllers from the assembly
                 var types = assembly.GetTypes()
@@ -96,12 +96,13 @@ namespace Datasilk.Core.Middleware
             {
                 context.Features.Get<IHttpMaxRequestBodySizeFeature>().MaxRequestBodySize = null;
             }
-            
+
             var requestStart = DateTime.Now;
             var path = CleanPath(context.Request.Path.ToString());
 
             //trap phishing requests that contain specific path values
-            if (phishingPaths.Contains(path)) {
+            if (phishingPaths.Contains(path))
+            {
                 context.Response.StatusCode = 500;
                 if (options.InvokeNext) { await _next.Invoke(context); }
                 return;
@@ -115,13 +116,13 @@ namespace Datasilk.Core.Middleware
                 //do not process files, but instead return a 404 error
                 context.Response.StatusCode = 404;
                 if (options.InvokeNext) { await _next.Invoke(context); }
-                return;             
+                return;
             }
             //get parameters from request body
             var parameters = await GetParameters(context);
 
             //trap phishing requests that contain specific parameter keys
-            if(phishingParamKeys.Any(a => parameters.Any(b => b.Key == a)))
+            if (phishingParamKeys.Any(a => parameters.Any(b => b.Key == a)))
             {
                 context.Response.StatusCode = 500;
                 if (options.InvokeNext) { await _next.Invoke(context); }
@@ -164,7 +165,7 @@ namespace Datasilk.Core.Middleware
                 ProcessController(context, path, paths, parameters);
             }
             if (options.InvokeNext) { await _next.Invoke(context); }
-            
+
         }
 
         private void ProcessController(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)
@@ -314,7 +315,7 @@ namespace Datasilk.Core.Middleware
             service.Path = path;
             service.PathParts = pathParts;
             service.Init();
-            if(context.Response.StatusCode >= 400)
+            if (context.Response.StatusCode >= 400)
             {
                 //service init returned an error status code
                 return;
@@ -342,7 +343,7 @@ namespace Datasilk.Core.Middleware
             }
 
             //check request method
-            if(!CanUseRequestMethod(context, method))
+            if (!CanUseRequestMethod(context, method))
             {
                 context.Response.StatusCode = 400;
                 context.Response.WriteAsync("Web service method " + methodName + " does not accept the '" + context.Request.Method + "' request method");
@@ -364,7 +365,7 @@ namespace Datasilk.Core.Middleware
                     {
                         context.Response.ContentType = "text/plain";
                     }
-                    else if(result.IndexOf("{") >= 0 && result.IndexOf("}") > 0)
+                    else if (result.IndexOf("{") >= 0 && result.IndexOf("}") > 0)
                     {
                         context.Response.ContentType = "text/json";
                     }
@@ -438,7 +439,7 @@ namespace Datasilk.Core.Middleware
                 }
                 data = Encoding.UTF8.GetString(bytes, 0, bytes.Length).Trim();
             }
-            
+
 
             if (data.Length > 0)
             {
@@ -465,10 +466,11 @@ namespace Datasilk.Core.Middleware
                             parameters.Add(key, "");
                         }
                     }
-                }else if(contentType != null && contentType.IndexOf("application/x-www-form-urlencoded") >= 0)
+                }
+                else if (contentType != null && contentType.IndexOf("application/x-www-form-urlencoded") >= 0)
                 {
                     var kvps = data.Split("&");
-                    foreach(var kv in kvps)
+                    foreach (var kv in kvps)
                     {
                         var kvp = kv.Split("=");
                         parameters.Add(kvp[0], kvp.Length > 1 ? HttpUtility.UrlDecode(kvp[1]) : "");
@@ -513,21 +515,74 @@ namespace Datasilk.Core.Middleware
                     {
                         // look for the "name" parameter
                         Match nameMatch = new Regex(@"(?<=name\=\"")(.*?)(?=\"")").Match(s);
+                        if (nameMatch.Success == false)
+                        {
+                            nameMatch = new Regex(@"(?<=name\=)(.*?)(?=\r\n)").Match(s);
+                        }
                         string name = nameMatch.Value.Trim().ToLower();
+                        if (name.IndexOf(";") > 0)
+                        {
+                            nameMatch = new Regex(@"(?<=name\=)(.*?)(?=;)").Match(s);
+                            name = nameMatch.Value.Trim().ToLower();
+                        }
 
                         // look for Content-Type
-                        Regex re = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n\r\n)");
-                        Match contentTypeMatch = re.Match(s);
+                        Match contentTypeMatch = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n\r\n)").Match(s);
+                        if (contentTypeMatch.Success == false)
+                        {
+                            contentTypeMatch = new Regex(@"(?<=Content\-Type:)(.*?)(?=;)").Match(s);
+                        }
+                        if (contentTypeMatch.Success == false)
+                        {
+                            contentTypeMatch = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n)").Match(s);
+                        }
+
+                        // look for Content-Disposition
+                        Match contentDispositionMatch = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n\r\n)").Match(s);
+                        if (contentDispositionMatch.Success == false)
+                        {
+                            contentDispositionMatch = new Regex(@"(?<=Content\-Type:)(.*?)(?=;)").Match(s);
+                        }
+                        if (contentDispositionMatch.Success == false)
+                        {
+                            contentDispositionMatch = new Regex(@"(?<=Content\-Type:)(.*?)(?=\r\n)").Match(s);
+                        }
 
                         // look for filename
-                        re = new Regex(@"(?<=filename\=\"")(.*?)(?=\"")");
-                        Match filenameMatch = re.Match(s);
+                        Match filenameMatch = new Regex(@"(?<=filename\=\"")(.*?)(?=\"")").Match(s);
+                        if (filenameMatch.Success == false)
+                        {
+                            filenameMatch = new Regex(@"(?<=filename\=)(.*?)(?=;)").Match(s);
+                        }
+
+                        // look for filename*
+                        Match filenameWildMatch = new Regex(@"(?<=filename\*\=\"")(.*?)(?=\"")").Match(s);
+                        if (filenameWildMatch.Success == false)
+                        {
+                            filenameWildMatch = new Regex(@"(?<=filename\*\=)(.*?)(?=;)").Match(s);
+                        }
 
                         // did we find the required values?
                         if (contentTypeMatch.Success && filenameMatch.Success)
                         {
                             // get the start & end indexes of the file contents
-                            var startIndex = totalLength + contentTypeMatch.Index + contentTypeMatch.Length + 4; // "\r\n\r\n".Length;
+                            var maxIndex = Math.Max(Math.Max(Math.Max(
+                                contentTypeMatch.Index,
+                                contentDispositionMatch.Index),
+                                filenameMatch.Index),
+                                filenameWildMatch.Index);
+                            Match propsEnd = new Regex(@"(?=\r\n\r\n)").Match(s, maxIndex);
+                            Match propsEnd2 = new Regex(@"(?=\r\n)").Match(s, maxIndex);
+                            var propsEndIndex = 0;
+                            if (propsEnd2.Index == propsEnd.Index)
+                            {
+                                propsEndIndex = propsEnd.Index + 4;
+                            }
+                            else
+                            {
+                                propsEndIndex = propsEnd2.Index + 2;
+                            }
+                            var startIndex = totalLength + propsEndIndex;
                             var endIndex = IndexOf(data, delimiterBytes, startIndex);
                             var contentLength = endIndex - startIndex;
 
@@ -547,7 +602,7 @@ namespace Datasilk.Core.Middleware
                             //add form file to Files list
                             parameters.Files.Add(name, formFile);
                             totalLength = endIndex + delimiterBytes.Length;
-                        } 
+                        }
                         else if (!string.IsNullOrWhiteSpace(name))
                         {
                             // Get the start & end indexes of the file contents
@@ -642,7 +697,7 @@ namespace Datasilk.Core.Middleware
                     else if (paramType.Name.IndexOf("Dictionary") == 0)
                     {
                         //convert param value (JSON) to Dictionary
-                        if(param != "" && param != "[]" && param != "{}")
+                        if (param != "" && param != "[]" && param != "{}")
                         {
                             try
                             {
@@ -650,14 +705,15 @@ namespace Datasilk.Core.Middleware
                             }
                             catch (Exception)
                             {
-                                Console.WriteLine("Could not convert JSON string into Dictionary for parameter \"" + methodParamName + "\" in method \"" +  method.Name + "\"");
+                                Console.WriteLine("Could not convert JSON string into Dictionary for parameter \"" + methodParamName + "\" in method \"" + method.Name + "\"");
                             }
                         }
-                        
-                        if(paramVals[x] == null) { 
-                            paramVals[x] = new Dictionary<string, string>(); 
+
+                        if (paramVals[x] == null)
+                        {
+                            paramVals[x] = new Dictionary<string, string>();
                         }
-                        
+
                     }
                     else if (paramType.Name == "Boolean")
                     {
@@ -670,7 +726,8 @@ namespace Datasilk.Core.Middleware
                         {
                             paramVals[x] = JsonSerializer.Deserialize(param, paramType);
                         }
-                        catch (Exception ex) {
+                        catch (Exception ex)
+                        {
                             Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
                         }
                     }
