@@ -20,7 +20,7 @@ public struct SerializedView
 public struct ViewElement
 {
     public string Name { get; set; }
-    public string Htm { get; set; }
+    public string Html { get; set; }
     public Dictionary<string, string> Vars { get; set; }
     public string Var { get; set; }
     public bool isBlock { get; set; }
@@ -324,7 +324,7 @@ public class View
         {
             Parse("", "", options.Html);
         }
-        else
+        else if(options.File != "")
         {
             Parse(options.File, options.Section, "");
         }
@@ -394,6 +394,26 @@ public class View
     public void Clear()
     {
         Data = new ViewData();
+    }
+
+
+
+    //if ViewElement is a block, return contents of entire block
+    public string GetBlock(int ElementIndex)
+    {
+        if(ElementIndex < 0) { return ""; }
+        var html = new StringBuilder();
+        var elem = Elements[ElementIndex];
+        html.Append(elem.Html);
+        var i = ElementIndex + 1;
+        while (i < Elements.Count)
+        {
+            var el = Elements[i];
+            if(el.Name == "/" + elem.Name) { break; }
+            html.Append("{{" + el.Name + (el.Var != null && el.Var != "" ? " " + el.Var : "") + "}}" + el.Html);
+            i++;
+        }
+        return html.ToString();
     }
 
     /// <summary>
@@ -642,7 +662,7 @@ public class View
                     if (x == 0 && HTML.IndexOf(arr[0].Substring(3)) == 0)//skip "{!}" using substring
                     {
                         //first element is HTML only
-                        Elements.Add(new ViewElement() { Htm = arr[x].Substring(3), Name = "" });
+                        Elements.Add(new ViewElement() { Html = arr[x].Substring(3), Name = "" });
                     }
                     else if (arr[x].Trim() != "")
                     {
@@ -653,7 +673,7 @@ public class View
                         viewElem = new ViewElement();
                         if (i > 0)
                         {
-                            viewElem.Htm = arr[x].Substring(i + 2);
+                            viewElem.Html = arr[x].Substring(i + 2);
 
                             //get variable name
                             if (s < i && s > 0)
@@ -736,7 +756,7 @@ public class View
                         else
                         {
                             viewElem.Name = "";
-                            viewElem.Htm = arr[x];
+                            viewElem.Html = arr[x];
                         }
                         Elements.Add(viewElem);
                     }
@@ -792,7 +812,7 @@ public class View
         //so we don't want to permanently mutate the public elements array
         var elems = Elements;
         if (elems.Count == 0) { return ""; }
-        var view = new StringBuilder();
+        var html = new StringBuilder();
         bool isBlock;
         bool hasSlash;
         for (var x = 0; x < elems.Count; x++)
@@ -804,7 +824,7 @@ public class View
             if (isBlock == false && nData.ContainsKey(elems[x].Name))
             {
                 //inject string into view variable
-                view.Append(nData[elems[x].Name] + elems[x].Htm);
+                html.Append(nData[elems[x].Name] + elems[x].Html);
             }
             else if(hideElements == true && elems[x].blockEnd != null && !showBlock)
             {
@@ -814,11 +834,11 @@ public class View
             else
             {
                 //passively add htm, ignoring view variable
-                view.Append((hideElements == true ? "" : (elems[x].Name != "" ? "{{" + elems[x].Name + "}}" : "")) + elems[x].Htm);
+                html.Append((hideElements == true ? "" : (elems[x].Name != "" ? "{{" + elems[x].Name + "}}" : "")) + elems[x].Html);
             }
         }
         //render scaffolding as HTML string
-        return view.ToString();
+        return html.ToString();
     }
 
     public string Get(string name)
@@ -826,7 +846,7 @@ public class View
         var index = Elements.FindIndex(c => c.Name == name);
         if (index < 0) { return ""; }
         var part = Elements[index];
-        var html = part.Htm;
+        var html = part.Html;
         for (var x = index + 1; x < Elements.Count; x++)
         {
             part = Elements[x];
@@ -846,7 +866,7 @@ public class View
             }
             else
             {
-                html += part.Htm;
+                html += part.Html;
             }
 
         }
@@ -858,7 +878,7 @@ public class View
     {
         return elements.ConvertAll(a => new ViewElement()
         {
-            Htm = a.Htm,
+            Html = a.Html,
             Name = a.Name,
             Vars = a.Vars
         });

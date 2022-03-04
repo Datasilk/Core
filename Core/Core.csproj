@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <Version>1.0.7.4</Version>
+    <TargetFramework>net6.0</TargetFramework>
+    <Version>1.0.7.7</Version>
     <RootNamespace>Datasilk.Core</RootNamespace>
     <PackageId>Datasilk.Core.Mvc</PackageId>
     <Authors>Mark Entingh</Authors>
@@ -16,10 +16,10 @@
     <RepositoryUrl>https://github.com/datasilk/core</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>MVC, Web API, lightweight</PackageTags>
-    <PackageReleaseNotes>Fixed bug where service response started before service method is called</PackageReleaseNotes>
+    <PackageReleaseNotes>Updated target framework to .NET 6.0</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.7.4</AssemblyVersion>
-    <FileVersion>1.0.7.4</FileVersion>
+    <AssemblyVersion>1.0.7.7</AssemblyVersion>
+    <FileVersion>1.0.7.7</FileVersion>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 

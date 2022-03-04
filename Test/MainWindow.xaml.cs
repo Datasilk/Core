@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace Test
@@ -19,7 +20,7 @@ namespace Test
             {
                 Html = txtInput.Text
             });
-            txtInput.Text = view.Render();
+            txtInput.Text = view.GetBlock(view.Elements.FindIndex(a => a.Name == "is-block"));
         }
 
         private void txtInput_TextChanged(object sender, TextChangedEventArgs e)
