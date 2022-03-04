@@ -29,19 +29,19 @@ public struct ViewElement
 
 public static class ViewCache
 {
-    public static Dictionary<string, SerializedView> cache { get; set; } = new Dictionary<string, SerializedView>();
+    public static Dictionary<string, View> Cache { get; set; } = new Dictionary<string, View>();
 
     public static void Remove(string file, string section = "")
     {
-        if (cache.ContainsKey(file + '/' + section) == true)
+        if (Cache.ContainsKey(file + '/' + section) == true)
         {
-            cache.Remove(file + '/' + section);
+            Cache.Remove(file + '/' + section);
         }
     }
 
     public static void Clear()
     {
-        cache.Clear();
+        Cache.Clear();
     }
 }
 
@@ -49,9 +49,11 @@ public class ViewChild
 {
     public ViewDictionary Data { get; set; }
     public Dictionary<string, int[]> Fields = new Dictionary<string, int[]>();
+    public View Parent { get; set; }
 
     public ViewChild(View parent, string id)
     {
+        Parent = parent;
         Data = new ViewDictionary(parent, id);
         //load related fields
         foreach (var item in parent.Fields)
@@ -335,7 +337,7 @@ public class View
     /// </summary>
     /// <param name="file">relative path to the template file</param>
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
-    public View(string file, Dictionary<string, SerializedView> cache = null)
+    public View(string file, Dictionary<string, View> cache = null)
     {
         Parse(file, "", "", cache);
     }
@@ -346,9 +348,24 @@ public class View
     /// <param name="file">relative path to the template file</param>
     /// <param name="section">section name within the template file to load, e.g. {{my-section}} ... {{/my-section}}</param>
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
-    public View(string file, string section, Dictionary<string, SerializedView> cache = null)
+    public View(string file, string section, Dictionary<string, View> cache = null)
     {
         Parse(file, section.ToLower(), "", cache);
+    }
+
+    /// <summary>
+    /// Most common way to load a view as it will access the ViewCache first, then generate a new View object if it is not cached
+    /// </summary>
+    /// <param name="file">relative path to your file</param>
+    /// <param name="section">The name of a mustache block found inside the file</param>
+    /// <returns>Either the cached View or a new View</returns>
+    public static View Load(string file, string section = "")
+    {
+        if(ViewCache.Cache.ContainsKey(file + '/' + section))
+        {
+            return ViewCache.Cache[file + '/' + section];
+        }
+        return new View(file, section);
     }
 
     public string this[string key]
@@ -454,36 +471,32 @@ public class View
         }
     }
 
-    private void Parse(string file, string section = "", string html = "", Dictionary<string, SerializedView> cache = null, bool loadPartials = true)
+    private void Parse(string file, string section = "", string html = "", Dictionary<string, View> cache = null, bool loadPartials = true)
     {
-        SerializedView cached = new SerializedView() { Elements = new List<ViewElement>() };
         Filename = file;
         Data = new ViewData();
         Section = section;
         if (file != "")
         {
 #if (!DEBUG)
-        if (cache == null && ViewCache.cache != null)
+        if (cache == null && ViewCache.Cache != null)
         {
-            cache = ViewCache.cache;
+            cache = ViewCache.Cache;
         }
 #endif
-
 
             if (cache != null)
             {
                 if (cache.ContainsKey(file + '/' + section) == true)
                 {
-                    cached = cache[file + '/' + section];
+                    var cached = cache[file + '/' + section];
                     //Data = cached.Data;
                     Elements = cached.Elements;
                     Fields = cached.Fields;
+                    return;
                 }
             }
         }
-
-        //was able to retrieve cached object
-        if (cached.Elements.Count != 0) { return; }
 
         //was NOT able to retrieve cached object
         Elements = new List<ViewElement>();
@@ -766,14 +779,7 @@ public class View
         //cache the view data
         if (cache != null && !cache.ContainsKey(file + "/" + section))
         {
-            var view = new SerializedView
-            {
-                //Data = Data,
-                Elements = Elements,
-                Fields = Fields,
-                Partials = Partials
-            };
-            cache.Add(file + '/' + section, view);
+            cache.Add(file + '/' + section, this);
         }
     }
 
