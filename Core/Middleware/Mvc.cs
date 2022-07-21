@@ -164,7 +164,7 @@ namespace Datasilk.Core.Middleware
                 //handle controller requests
                 ProcessController(context, path, paths, parameters);
             }
-            if (options.InvokeNext) { await _next.Invoke(context); }
+            if (options.InvokeNext) { _next(context); }
 
         }
 
