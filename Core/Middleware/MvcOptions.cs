@@ -43,5 +43,6 @@ namespace Datasilk.Core.Middleware
         /// Determines if the Middleware will invoke the next middleware in the pipeline
         /// </summary>
         public bool InvokeNext { get; set; } = true;
+        public bool AwaitInvoke { get; set; } = true;
     }
 }

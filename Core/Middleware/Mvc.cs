@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Datasilk.Core.Middleware
 {
@@ -164,8 +165,17 @@ namespace Datasilk.Core.Middleware
                 //handle controller requests
                 ProcessController(context, path, paths, parameters);
             }
-            if (options.InvokeNext) { _next(context); }
-
+            await context.Response.CompleteAsync();
+            if (options.InvokeNext && context.Response.HasStarted == false) {
+                if (options.AwaitInvoke)
+                {
+                    await _next.Invoke(context);
+                }
+                else
+                {
+                    Task task = _next.Invoke(context);
+                }
+            }
         }
 
         private void ProcessController(HttpContext context, string path, string[] pathParts, Web.Parameters parameters)
@@ -248,6 +258,7 @@ namespace Datasilk.Core.Middleware
             }
             if (context.Response.HasStarted == false)
             {
+                //context.Response.ContentLength = html.Length;
                 context.Response.WriteAsync(html);
             }
         }
@@ -370,9 +381,9 @@ namespace Datasilk.Core.Middleware
                         context.Response.ContentType = "text/json";
                     }
                 }
-                //context.Response.ContentLength = result.Length;
                 if (result != null)
                 {
+                //context.Response.ContentLength = result.Length;
                     context.Response.WriteAsync(result);
                 }
                 else
