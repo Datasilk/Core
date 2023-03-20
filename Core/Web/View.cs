@@ -8,15 +8,6 @@ using System.Text.Json;
 using System.ComponentModel;
 
 [Serializable]
-public struct SerializedView
-{
-    public ViewData Data;
-    public Dictionary<string, int[]> Fields;
-    public List<ViewElement> Elements;
-    public List<ViewPartial> Partials;
-}
-
-[Serializable]
 public struct ViewElement
 {
     public string Name { get; set; }
@@ -155,7 +146,8 @@ public class ViewPartial
 }
 
 /// <summary>
-/// Allow developers to create pointers so that the mustache variable can use a pointer path instead of the actual relative path to a partial view file
+/// Allow developers to create pointers so that the mustache variable can use a 
+/// pointer path instead of the actual relative path to a partial view file
 /// </summary>
 public static class ViewPartialPointers
 {
@@ -361,10 +353,6 @@ public class View
     /// <returns>Either the cached View or a new View</returns>
     public static View Load(string file, string section = "")
     {
-        if(ViewCache.Cache.ContainsKey(file + '/' + section))
-        {
-            return ViewCache.Cache[file + '/' + section];
-        }
         return new View(file, section);
     }
 
@@ -413,14 +401,17 @@ public class View
         Data = new ViewData();
     }
 
-
-
-    //if ViewElement is a block, return contents of entire block
+    /// <summary>
+    /// If the Element item at the given index is a mustache block, return contents of entire block
+    /// </summary>
+    /// <param name="ElementIndex"></param>
+    /// <returns>Index of Elements item</returns>
     public string GetBlock(int ElementIndex)
     {
         if(ElementIndex < 0) { return ""; }
         var html = new StringBuilder();
         var elem = Elements[ElementIndex];
+        if (!elem.isBlock) { return ""; }
         html.Append(elem.Html);
         var i = ElementIndex + 1;
         while (i < Elements.Count)
@@ -434,38 +425,56 @@ public class View
     }
 
     /// <summary>
-    /// Binds an object to the view template. Use e.g. {{myprop}} or {{myobj.myprop}} to represent object fields & properties in template
+    /// If the Element is a mustache block, return contents of entire block
     /// </summary>
-    /// <param name="obj"></param>
-    public void Bind(object obj, string root = "")
+    /// <param name="Element"></param>
+    /// <returns></returns>
+    public string GetBlock(ViewElement Element)
+    {
+        var index = Elements.IndexOf(Element);
+        if(index >= 0)
+        {
+            return GetBlock(index);
+        }
+        return "";
+    }
+
+    /// <summary>
+    /// Binds an object to the view template. Use e.g. {{myprop}} or {{myobj.myprop}} to represent 
+    /// object fields & properties in template
+    /// </summary>
+    /// <param name="obj">The object that you wish to bind to mustache variables within the View contents</param>
+    /// <param name="name">Specify the root object name found within your mustache variables (e.g. {{myobj.myprop}} would use "myobj" as the root)</param>
+    /// <param name="dtFormat">Date/Time string formatting to use for DateTime objects</param>
+    public void Bind(object obj, string name = "", string dtFormat = "M/dd/yyyy h:mm tt")
     {
         if (obj != null)
         {
             foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(obj))
             {
                 object val = property.GetValue(obj);
-                var name = (root != "" ? root + "." : "") + property.Name.ToLower();
+                var varname = (name != "" ? name + "." : "") + property.Name.ToLower();
                 if (val == null)
                 {
-                    Data[name] = "";
+                    Data[varname] = "";
                 }
                 else if (val is string || val is int || val is long || val is double || val is decimal || val is short)
                 {
                     //add property value to dictionary
-                    Data[name] = val.ToString();
+                    Data[varname] = val.ToString();
                 }
                 else if (val is bool)
                 {
-                    Data[name] = (bool)val == true ? "1" : "0";
+                    Data[varname] = (bool)val == true ? "1" : "0";
                 }
                 else if (val is DateTime)
                 {
-                    Data[name] = ((DateTime)val).ToShortDateString() + " " + ((DateTime)val).ToShortTimeString();
+                    Data[varname] = ((DateTime)val).ToString(dtFormat);
                 }
                 else if (val is object)
                 {
                     //recurse child object for properties
-                    Bind(val, name);
+                    Bind(val, varname);
                 }
             }
         }
@@ -490,9 +499,9 @@ public class View
                 if (cache.ContainsKey(file + '/' + section) == true)
                 {
                     var cached = cache[file + '/' + section];
-                    //Data = cached.Data;
                     Elements = cached.Elements;
                     Fields = cached.Fields;
+                    Partials = cached.Partials;
                     return;
                 }
             }
@@ -542,7 +551,7 @@ public class View
 
         //get view from html code
         var dirty = true;
-        var arr = HTML.Split("{{");
+        string[] arr;
         var i = 0;
         var s = 0;
         var c = 0;
@@ -799,14 +808,6 @@ public class View
         return string.Join("", html);
     }
 
-    private class ClosingElement
-    {
-        public string Name;
-        public int Start;
-        public int End;
-        public bool Show { get; set; } = false;
-    }
-
     public string Render()
     {
         return Render(Data);
@@ -814,33 +815,34 @@ public class View
 
     public string Render(ViewData nData, bool hideElements = true)
     {
-        //deserialize list of elements since we will be manipulating the list,
-        //so we don't want to permanently mutate the public elements array
-        var elems = Elements;
-        if (elems.Count == 0) { return ""; }
+        if (Elements.Count == 0) { return ""; }
         var html = new StringBuilder();
-        bool isBlock;
-        bool hasSlash;
-        for (var x = 0; x < elems.Count; x++)
+        for (var x = 0; x < Elements.Count; x++)
         {
             //check if view item is an enclosing tag or just a variable
-            isBlock = elems[x].isBlock;
-            hasSlash = elems[x].Name.IndexOf('/') >= 0;
-            var showBlock = isBlock && !hasSlash && nData.ContainsKey(elems[x].Name) && nData[elems[x].Name] == "True";
-            if (isBlock == false && nData.ContainsKey(elems[x].Name))
+            if (Elements[x].isBlock == false && nData.ContainsKey(Elements[x].Name))
             {
                 //inject string into view variable
-                html.Append(nData[elems[x].Name] + elems[x].Html);
-            }
-            else if(hideElements == true && elems[x].blockEnd != null && !showBlock)
-            {
-                //skip elements if user decides not to show a block
-                x = elems[x].blockEnd.Value - 1; 
+                html.Append(nData[Elements[x].Name] + Elements[x].Html);
             }
             else
             {
-                //passively add htm, ignoring view variable
-                html.Append((hideElements == true ? "" : (elems[x].Name != "" ? "{{" + elems[x].Name + "}}" : "")) + elems[x].Html);
+                if (hideElements == true && Elements[x].blockEnd != null && !(Elements[x].isBlock && Elements[x].Name.IndexOf('/') < 0 && nData.ContainsKey(Elements[x].Name) && nData[Elements[x].Name] == "True"))
+                {
+                    //skip elements if user decides not to show a block
+                    x = Elements[x].blockEnd.Value - 1;
+                }
+                else if(hideElements == false && Elements[x].Name != "")
+                {
+                    //passively add htm, ignoring view variable
+                    html.Append("{{" + Elements[x].Name + 
+                        (!string.IsNullOrEmpty(Elements[x].Var) ? " " + Elements[x].Var : "") + 
+                        "}}" + Elements[x].Html);
+                }
+                else
+                {
+                    html.Append(Elements[x].Html);
+                }
             }
         }
         //render scaffolding as HTML string
@@ -878,16 +880,6 @@ public class View
         }
 
         return html;
-    }
-
-    private static List<ViewElement> CloneElements(List<ViewElement> elements)
-    {
-        return elements.ConvertAll(a => new ViewElement()
-        {
-            Html = a.Html,
-            Name = a.Name,
-            Vars = a.Vars
-        });
     }
 
     private static string MapPath(string strPath = "")
