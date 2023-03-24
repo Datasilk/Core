@@ -505,12 +505,10 @@ public class View
         Section = section;
         if (file != "")
         {
-#if (!DEBUG)
-        if (cache == null && ViewCache.Cache != null)
-        {
-            cache = ViewCache.Cache;
-        }
-#endif
+            if (cache == null && ViewCache.Cache != null)
+            {
+                cache = ViewCache.Cache;
+            }
 
             if (cache != null)
             {
