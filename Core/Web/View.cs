@@ -480,6 +480,24 @@ public class View
         }
     }
 
+    /// <summary>
+    /// Get relative path by utilizing the ViewPartialPointers.Paths property to translate path into relative path
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public string GetPath(string path)
+    {
+        if (path[0] == '/') { path = path.Substring(1); }
+
+        //replace pointer paths with relative paths
+        var pointer = ViewPartialPointers.Paths.Where(a => path.IndexOf(a.Key) == 0).Select(p => new { p.Key, p.Value }).FirstOrDefault();
+        if (pointer != null)
+        {
+            path = path.Replace(pointer.Key, pointer.Value);
+        }
+        return '/' + path;
+    }
+
     private void Parse(string file, string section = "", string html = "", Dictionary<string, View> cache = null, bool loadPartials = true)
     {
         Filename = file;
@@ -596,19 +614,7 @@ public class View
                         u2 = arr[x].IndexOf('"', u + 2);
                         var partial_path = arr[x].Substring(u + 1, u2 - u - 1);
                         if (partial_path.Length > 0) {
-                            if (partial_path[0] == '/')
-                            {
-                                partial_path = partial_path.Substring(1);
-                            }
-
-                            //replace pointer paths with relative paths
-                            var pointer = ViewPartialPointers.Paths.Where(a => partial_path.IndexOf(a.Key) == 0).Select(p => new { p.Key, p.Value }).FirstOrDefault();
-                            if (pointer != null)
-                            {
-                                partial_path = partial_path.Replace(pointer.Key, pointer.Value);
-                            }
-                            partial_path = '/' + partial_path;
-
+                            partial_path = GetPath(partial_path);
 
                             //load the view HTML
                             var newScaff = new View(partial_path, "", cache);
