@@ -6,16 +6,28 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.ComponentModel;
+using Datasilk.Core.DOM;
+using static System.Collections.Specialized.BitVector32;
 
-[Serializable]
-public struct ViewElement
+public class ViewElement
 {
-    public string Name { get; set; }
-    public string Html { get; set; }
-    public Dictionary<string, string> Vars { get; set; }
-    public string Var { get; set; }
-    public bool isBlock { get; set; }
-    public int? blockEnd { get; set; }
+    //make sure all fields are read-only so user doesn't accidentally modify site-wide cached objects
+    public string Name { get; }
+    public string Html { get; }
+    public Dictionary<string, string> Vars { get; }
+    public string Var { get; }
+    public bool isBlock { get; }
+    public int? blockEnd { get; }
+
+    public ViewElement(string name, string html, Dictionary<string, string> vars = null, string var = "", bool isblock = false, int? blockend = null)
+    {
+        Name = name;
+        Html = html;
+        Vars = vars;
+        Var = var;
+        isBlock = isblock;
+        blockEnd = blockend;
+    }
 }
 
 public static class ViewCache
@@ -137,7 +149,6 @@ public class ViewDictionary : Dictionary<string, string>
     }
 }
 
-[Serializable]
 public class ViewPartial
 {
     public string Name { get; set; }
@@ -289,13 +300,33 @@ public static class ViewConfig
 
 public class View
 {
-    public List<ViewElement> Elements;
-    public List<ViewPartial> Partials = new List<ViewPartial>();
-    public Dictionary<string, int[]> Fields = new Dictionary<string, int[]>();
-    public string Filename = "";
-    public string HTML = "";
-    public string Section = ""; //section of the template to use for rendering
+    /// <summary>
+    /// Prep class that collects data and then assigns the read-only properties from the prep data
+    /// </summary>
+    private class ViewPrep
+    {
+        public List<ViewElement> Elements { get; set; } = new List<ViewElement>();
+        public List<ViewPartial> Partials { get; set; } = new List<ViewPartial>();
+        public Dictionary<string, int[]> Fields { get; set; } = new Dictionary<string, int[]>();
+        public string Filename { get; set; } = "";
+        public string HTML { get; set; } = "";
+        public string Section { get; set; } = ""; //section of the template to use for rendering
+    }
 
+    private readonly List<ViewElement> _Elements;
+    private readonly List<ViewPartial> _Partials;
+    private readonly Dictionary<string, int[]> _Fields;
+    private readonly string _Filename;
+    private readonly string _HTML;
+    private readonly string _Section; //section of the template to use for rendering
+
+    public List<ViewElement> Elements { get { return _Elements; } }
+    public List<ViewPartial> Partials { get { return _Partials; } }
+    public Dictionary<string, int[]> Fields { get { return _Fields; } }
+    public string Filename { get { return _Filename; } }
+    public string HTML { get { return _HTML; } }
+    public string Section { get { return _Section; } } //section of the template to use for rendering
+    
     public ViewData Data;
     private Dictionary<string, ViewChild> children = null;
 
@@ -314,14 +345,25 @@ public class View
 
     public View(ViewOptions options)
     {
+        string file = "";
+        string section = "";
+        string html = "";
         if (options.Html != null && options.Html != "")
         {
-            Parse("", "", options.Html);
+            html = options.Html;
         }
         else if(options.File != "")
         {
-            Parse(options.File, options.Section, "");
+            file = options.File;
+            section = options.Section;
         }
+        var prep = Parse(file, section, html);
+        _Elements = prep.Elements;
+        _Partials = prep.Partials;
+        _Fields = prep.Fields;
+        _Filename = prep.Filename;
+        _HTML = prep.HTML;
+        _Section = prep.Section;
     }
 
     /// <summary>
@@ -331,7 +373,13 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, Dictionary<string, View> cache = null)
     {
-        Parse(file, "", "", cache);
+        var prep = Parse(file, "", "", cache);
+        _Elements = prep.Elements;
+        _Partials = prep.Partials;
+        _Fields = prep.Fields;
+        _Filename = prep.Filename;
+        _HTML = prep.HTML;
+        _Section = prep.Section;
     }
 
     /// <summary>
@@ -342,7 +390,13 @@ public class View
     /// <param name="cache">Dictionary object used to save cached, parsed template to</param>
     public View(string file, string section, Dictionary<string, View> cache = null)
     {
-        Parse(file, section.ToLower(), "", cache);
+        var prep = Parse(file, section.ToLower(), "", cache);
+        _Elements = prep.Elements;
+        _Partials = prep.Partials;
+        _Fields = prep.Fields;
+        _Filename = prep.Filename;
+        _HTML = prep.HTML;
+        _Section = prep.Section;
     }
 
     /// <summary>
@@ -498,11 +552,12 @@ public class View
         return '/' + path;
     }
 
-    private void Parse(string file, string section = "", string html = "", Dictionary<string, View> cache = null, bool loadPartials = true)
+    private ViewPrep Parse(string file, string section = "", string html = "", Dictionary<string, View> cache = null, bool loadPartials = true)
     {
-        Filename = file;
+        var prep = new ViewPrep();
+        prep.Filename = file;
+        prep.Section = section;
         Data = new ViewData();
-        Section = section;
         if (file != "")
         {
             if (cache == null && ViewCache.Cache != null)
@@ -515,30 +570,30 @@ public class View
                 if (cache.ContainsKey(file + '/' + section) == true)
                 {
                     var cached = cache[file + '/' + section];
-                    Elements = cached.Elements;
-                    Fields = cached.Fields;
-                    Partials = cached.Partials;
-                    return;
+                    prep.Elements = cached.Elements;
+                    prep.Fields = cached.Fields;
+                    prep.Partials = cached.Partials;
+                    return prep;
                 }
             }
         }
 
         //was NOT able to retrieve cached object
-        Elements = new List<ViewElement>();
+        prep.Elements = new List<ViewElement>();
 
         //try loading file from disk
         if (file != "")
         {
             if (File.Exists(MapPath(file)))
             {
-                HTML = File.ReadAllText(MapPath(file));
+                prep.HTML = File.ReadAllText(MapPath(file));
             }
         }
         else
         {
-            HTML = html;
+            prep.HTML = html;
         }
-        if (HTML.Trim() == "") { return; }
+        if (prep.HTML.Trim() == "") { return prep; }
 
         //next, find the group of code matching the view section name
         if (section != "")
@@ -546,13 +601,13 @@ public class View
             //find starting tag (optionally with arguments)
             //for example: {{button (name:submit, style:outline)}}
             int[] e = new int[3];
-            e[0] = HTML.IndexOf("{{" + section);
+            e[0] = prep.HTML.IndexOf("{{" + section);
             if (e[0] >= 0)
             {
-                e[1] = HTML.IndexOf("}", e[0]);
+                e[1] = prep.HTML.IndexOf("}", e[0]);
                 if (e[1] - e[0] <= 256)
                 {
-                    e[1] = HTML.IndexOf("{{/" + section + "}}", e[1]);
+                    e[1] = prep.HTML.IndexOf("{{/" + section + "}}", e[1]);
                 }
                 else { e[0] = -1; }
 
@@ -561,7 +616,7 @@ public class View
             if (e[0] >= 0 & e[1] > (e[0] + section.Length + 4))
             {
                 e[2] = e[0] + 4 + section.Length;
-                HTML = HTML.Substring(e[2], e[1] - e[2]);
+                prep.HTML = prep.HTML.Substring(e[2], e[1] - e[2]);
             }
         }
 
@@ -573,17 +628,22 @@ public class View
         var c = 0;
         var u = 0;
         var u2 = 0;
-        ViewElement viewElem;
+        string viewElem_Name;
+        string viewElem_Html;
+        Dictionary<string, string> viewElem_Vars;
+        string viewElem_Var;
+        bool viewElem_isBlock;
+        int? viewElem_blockEnd;
+
         while (dirty == true)
         {
             dirty = false;
-            arr = HTML.Split("{{");
+            arr = prep.HTML.Split("{{");
             i = 0;
             s = 0;
             c = 0;
             u = 0;
             u2 = 0;
-            viewElem = new ViewElement();
 
             //types of view elements
 
@@ -596,7 +656,7 @@ public class View
             //first, load all HTML includes
             for (var x = 0; x < arr.Length; x++)
             {
-                if (x == 0 && HTML.IndexOf(arr[x]) == 0)
+                if (x == 0 && prep.HTML.IndexOf(arr[x]) == 0)
                 {
                     arr[x] = "{!}" + arr[x];
                 }
@@ -608,7 +668,7 @@ public class View
                     if (i > 0 && u > 0 && u < i - 2 && (s == -1 || s > u) && loadPartials == true)
                     {
                         //read partial include & load HTML from another file
-                        viewElem.Name = arr[x].Substring(0, u - 1).Trim().ToLower();
+                        viewElem_Name = arr[x].Substring(0, u - 1).Trim().ToLower();
                         u2 = arr[x].IndexOf('"', u + 2);
                         var partial_path = arr[x].Substring(u + 1, u2 - u - 1);
                         if (partial_path.Length > 0) {
@@ -641,7 +701,7 @@ public class View
                             //rename child view variables, adding a prefix
                             var ht = newScaff.Render(newScaff.Data, false);
                             var y = 0;
-                            var prefix = viewElem.Name + "-";
+                            var prefix = viewElem_Name + "-";
                             while (y >= 0)
                             {
                                 y = ht.IndexOf("{{", y);
@@ -657,8 +717,8 @@ public class View
                                 y += 2;
                             }
 
-                            Partials.Add(new ViewPartial() { Name = viewElem.Name, Path = partial_path, Prefix = prefix });
-                            Partials.AddRange(newScaff.Partials.Select(a =>
+                            prep.Partials.Add(new ViewPartial() { Name = viewElem_Name, Path = partial_path, Prefix = prefix });
+                            prep.Partials.AddRange(newScaff.Partials.Select(a =>
                             {
                                 var partial = a;
                                 partial.Prefix = prefix + partial.Prefix;
@@ -672,8 +732,8 @@ public class View
                             //partial not found
                             arr[x] = "{!}" + arr[x].Substring(i + 2);
                         }
-                            
-                        HTML = JoinHTML(arr);
+
+                        prep.HTML = JoinHTML(arr);
                         dirty = true; //HTML is dirty, restart loop
                         break;
                     }
@@ -685,10 +745,10 @@ public class View
                 //next, process variables & blocks
                 for (var x = 0; x < arr.Length; x++)
                 {
-                    if (x == 0 && HTML.IndexOf(arr[0].Substring(3)) == 0)//skip "{!}" using substring
+                    if (x == 0 && prep.HTML.IndexOf(arr[0].Substring(3)) == 0)//skip "{!}" using substring
                     {
                         //first element is HTML only
-                        Elements.Add(new ViewElement() { Html = arr[x].Substring(3), Name = "" });
+                        prep.Elements.Add(new ViewElement("", arr[x].Substring(3)));
                     }
                     else if (arr[x].Trim() != "")
                     {
@@ -696,46 +756,51 @@ public class View
                         s = arr[x].IndexOf(' ');
                         c = arr[x].IndexOf(':');
                         u = arr[x].IndexOf('"');
-                        viewElem = new ViewElement();
+                        viewElem_Name = "";
+                        viewElem_Html = "";
+                        viewElem_Vars = null;
+                        viewElem_Var = "";
+                        viewElem_isBlock = false;
+                        viewElem_blockEnd = null;
                         if (i > 0)
                         {
-                            viewElem.Html = arr[x].Substring(i + 2);
+                            viewElem_Html = arr[x].Substring(i + 2);
 
                             //get variable name
                             if (s < i && s > 0)
                             {
                                 //found space
-                                viewElem.Name = arr[x].Substring(0, s).Trim().ToLower();
+                                viewElem_Name = arr[x].Substring(0, s).Trim().ToLower();
                             }
                             else
                             {
                                 //found tag end
-                                viewElem.Name = arr[x].Substring(0, i).Trim().ToLower();
+                                viewElem_Name = arr[x].Substring(0, i).Trim().ToLower();
                             }
                             //since each variable could have the same name but different parameters,
                             //save the full name & parameters as the name
                             //viewElem.Name = arr[x].Substring(0, i);
 
-                            if (!viewElem.Name.Contains('/'))
+                            if (!viewElem_Name.Contains('/'))
                             {
-                                if (Fields.ContainsKey(viewElem.Name))
+                                if (prep.Fields.ContainsKey(viewElem_Name))
                                 {
                                     //add element index to existing field
-                                    var field = Fields[viewElem.Name];
-                                    Fields[viewElem.Name] = field.Append(Elements.Count).ToArray();
+                                    var field = prep.Fields[viewElem_Name];
+                                    prep.Fields[viewElem_Name] = field.Append(prep.Elements.Count).ToArray();
                                 }
                                 else
                                 {
                                     //add field with element index
-                                    Fields.Add(viewElem.Name, new int[] { Elements.Count });
+                                    prep.Fields.Add(viewElem_Name, new int[] { prep.Elements.Count });
                                 }
                                 //check if view element is a block
                                 for(var y = x + 1; y < arr.Length; y++)
                                 {
-                                    if(arr[y].IndexOf("/" + viewElem.Name + "}}") == 0)
+                                    if(arr[y].IndexOf("/" + viewElem_Name + "}}") == 0)
                                     {
-                                        viewElem.isBlock = true;
-                                        viewElem.blockEnd = y;
+                                        viewElem_isBlock = true;
+                                        viewElem_blockEnd = y;
                                         break;
                                     }
                                 }
@@ -744,7 +809,7 @@ public class View
                             {
                                 //get optional variables stored within tag
                                 var vars = arr[x].Substring(s + 1, i - s - 1);
-                                viewElem.Var = vars.Trim();
+                                viewElem_Var = vars.Trim();
                                 //clean vars
                                 var vi = 0;
                                 var ve = 0;
@@ -774,17 +839,17 @@ public class View
                                 if(vars[^1] == ',') { vars = vars.Substring(0, vars.Length - 1); }
                                 try
                                 {
-                                    viewElem.Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
+                                    viewElem_Vars = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + vars + "}");
                                 }
                                 catch (Exception){}
                             }
                         }
                         else
                         {
-                            viewElem.Name = "";
-                            viewElem.Html = arr[x];
+                            viewElem_Name = "";
+                            viewElem_Html = arr[x];
                         }
-                        Elements.Add(viewElem);
+                        prep.Elements.Add(new ViewElement(viewElem_Name, viewElem_Html, viewElem_Vars, viewElem_Var, viewElem_isBlock, viewElem_blockEnd));
                     }
                 }
             }
@@ -794,6 +859,8 @@ public class View
         {
             cache.Add(file + '/' + section, this);
         }
+
+        return prep;
     }
 
     private string JoinHTML(string[] html)
@@ -817,12 +884,23 @@ public class View
         return Render(Data);
     }
 
-    public string Render(ViewData nData, bool hideElements = true)
+    public string Render(List<ViewElement> excludeElements = null)
+    {
+        return Render(Data, true, excludeElements);
+    }
+
+    public string Render(ViewData nData, bool hideElements = true, List<ViewElement> excludeElements = null)
     {
         if (Elements.Count == 0) { return ""; }
         var html = new StringBuilder();
         for (var x = 0; x < Elements.Count; x++)
         {
+            //check for excluded elements
+            if(excludeElements != null && excludeElements.Contains(Elements[x]))
+            {
+                html.Append(Elements[x].Html);
+                continue;
+            }
             //check if view item is an enclosing tag or just a variable
             if (Elements[x].isBlock == false && nData.ContainsKey(Elements[x].Name))
             {
