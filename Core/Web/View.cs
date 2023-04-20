@@ -6,8 +6,6 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.ComponentModel;
-using Datasilk.Core.DOM;
-using static System.Collections.Specialized.BitVector32;
 
 public class ViewElement
 {

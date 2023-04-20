@@ -417,7 +417,7 @@ namespace Datasilk.Core.Middleware
                 .Replace("*", "");
         }
 
-        private async static Task<Web.Parameters> GetParameters(HttpContext context)
+        private async Task<Web.Parameters> GetParameters(HttpContext context)
         {
             var contentType = context.Request.ContentType;
             var parameters = new Web.Parameters();
@@ -505,8 +505,7 @@ namespace Datasilk.Core.Middleware
             return parameters;
         }
 
-
-        private static void GetMultipartParameters(HttpContext context, Web.Parameters parameters, Encoding encoding)
+        private void GetMultipartParameters(HttpContext context, Web.Parameters parameters, Encoding encoding)
         {
             var data = ToByteArray(context.Request.BodyReader.AsStream());
             var content = encoding.GetString(data);
@@ -627,7 +626,7 @@ namespace Datasilk.Core.Middleware
             }
         }
 
-        private static object[] MapParameters(ParameterInfo[] methodParams, Web.Parameters parameters, MethodInfo method)
+        private object[] MapParameters(ParameterInfo[] methodParams, Web.Parameters parameters, MethodInfo method)
         {
             var paramVals = new object[methodParams.Length];
             for (var x = 0; x < methodParams.Length; x++)
@@ -716,7 +715,10 @@ namespace Datasilk.Core.Middleware
                             }
                             catch (Exception)
                             {
-                                Console.WriteLine("Could not convert JSON string into Dictionary for parameter \"" + methodParamName + "\" in method \"" + method.Name + "\"");
+                                if (options.WriteDebugInfoToConsole)
+                                {
+                                    Console.WriteLine("Could not convert JSON string into Dictionary for parameter \"" + methodParamName + "\" in method \"" + method.Name + "\"");
+                                }
                             }
                         }
 
@@ -739,7 +741,12 @@ namespace Datasilk.Core.Middleware
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                            if (options.WriteDebugInfoToConsole)
+                            {
+                                Console.WriteLine(ex.Message + "\n" +
+                                "Parameter: " + param
+                                );
+                            }
                         }
                     }
                 }
@@ -752,7 +759,7 @@ namespace Datasilk.Core.Middleware
             return paramVals;
         }
 
-        private static string CleanReflectionName(string myStr)
+        private string CleanReflectionName(string myStr)
         {
             string newStr = myStr.ToString();
             int x = 0;
@@ -775,7 +782,7 @@ namespace Datasilk.Core.Middleware
             return newStr;
         }
 
-        private static bool CanUseRequestMethod(HttpContext context, MethodInfo method)
+        private bool CanUseRequestMethod(HttpContext context, MethodInfo method)
         {
             var reqMethod = context.Request.Method.ToLower();
             var hasReqAttr = false;
@@ -803,7 +810,7 @@ namespace Datasilk.Core.Middleware
             return true;
         }
 
-        private static int IndexOf(byte[] searchWithin, byte[] serachFor, int startIndex)
+        private int IndexOf(byte[] searchWithin, byte[] serachFor, int startIndex)
         {
             int index = 0;
             int startPos = Array.IndexOf(searchWithin, serachFor[0], startIndex);
@@ -835,7 +842,7 @@ namespace Datasilk.Core.Middleware
             return -1;
         }
 
-        private static byte[] ToByteArray(Stream stream)
+        private byte[] ToByteArray(Stream stream)
         {
             byte[] buffer = new byte[32768];
             using (MemoryStream ms = new MemoryStream())
